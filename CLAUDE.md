@@ -539,7 +539,7 @@ func (s *Store) Init(ctx context.Context) error {
 - `verifi init` works completely offline
 - No dependency on curl.se being available
 - Faster initialization (no network request)
-- `verifi update` optionally fetches newer versions
+- `verifi bundle update` optionally fetches newer versions
 
 ## CLI Command Reference
 
@@ -555,8 +555,9 @@ verifi cert list [--json] [--expired]
 verifi cert remove <name> [--force]
 verifi cert inspect <name>
 
-# Update Mozilla CA bundle (optional, from curl.se)
-verifi update [--check-only] [--url <custom-url>]
+# Mozilla CA bundle management (optional, from curl.se)
+verifi bundle update [--check-only] [--url <custom-url>]
+verifi bundle info [--json]
 
 # Status and verification
 verifi status [--json]
@@ -580,7 +581,7 @@ var rootCmd = &cobra.Command{
 func init() {
     rootCmd.AddCommand(initCmd)
     rootCmd.AddCommand(certCmd)
-    rootCmd.AddCommand(updateCmd)
+    rootCmd.AddCommand(bundleCmd)
     rootCmd.AddCommand(statusCmd)
     rootCmd.AddCommand(verifyCmd)
     rootCmd.AddCommand(doctorCmd)
@@ -893,13 +894,16 @@ verifi cert list
 ### Updating Mozilla Bundle
 ```bash
 # Check for updates
-verifi update --check-only
+verifi bundle update --check-only
+
+# Show current bundle information
+verifi bundle info
 
 # Update if available (fetches from https://curl.se/ca/cacert.pem)
-verifi update
+verifi bundle update
 
 # Use custom URL if needed
-verifi update --url https://mirror.example.com/cacert.pem
+verifi bundle update --url https://mirror.example.com/cacert.pem
 ```
 
 **Default Mozilla CA Bundle URL**: `https://curl.se/ca/cacert.pem`

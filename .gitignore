@@ -1,0 +1,39 @@
+# Binaries
+/verifi
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test and coverage files
+*.test
+*.out
+coverage.out
+coverage.html
+
+# Go build cache
+go.build
+.cache/
+
+# Dependency directories
+vendor/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+
+# Development artifacts
+dist/
+build/
+
+# Log files
+*.log
