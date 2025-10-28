@@ -1,7 +1,10 @@
 // Package errors provides custom error types and exit codes for verifi.
 package errors
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // VerifiError is a custom error type that provides context about operations.
 type VerifiError struct {
@@ -39,3 +42,8 @@ const (
 	ExitCertError    = 3 // Certificate error (invalid cert, expired, verification failed)
 	ExitNetworkError = 4 // Network error (failed to fetch Mozilla bundle)
 )
+
+// IsError checks if the given error matches the target error using errors.Is.
+func IsError(err, target error) bool {
+	return errors.Is(err, target)
+}

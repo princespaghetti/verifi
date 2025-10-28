@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/princespaghetti/verifi/internal/fetcher"
 	verifierrors "github.com/princespaghetti/verifi/internal/errors"
+	"github.com/princespaghetti/verifi/internal/fetcher"
 )
 
 // Store represents the certificate store and provides operations for managing certificates.
@@ -156,8 +156,16 @@ func (s *Store) rebuildBundle(ctx context.Context, metadata *Metadata) error {
 	// Start with Mozilla bundle
 	combined := mozillaData
 
-	// Append user certs (Phase 3 will implement this)
-	// For now, combined bundle is just the Mozilla bundle
+	// Append user certs
+	userCerts, err := s.readUserCerts(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Concatenate user certificates to the bundle
+	for _, certData := range userCerts {
+		combined = append(combined, certData...)
+	}
 
 	// Write to temp file
 	if err := s.fs.WriteFile(tempPath, combined, 0644); err != nil {
@@ -178,12 +186,17 @@ func (s *Store) rebuildBundle(ctx context.Context, metadata *Metadata) error {
 		}
 	}
 
-	// Update metadata
+	// Update metadata - include sources based on what's in the bundle
+	sources := []string{"mozilla"}
+	if len(userCerts) > 0 {
+		sources = append(sources, "user")
+	}
+
 	metadata.CombinedBundle = BundleInfo{
 		Generated: time.Now(),
 		SHA256:    computeSHA256(combined),
 		CertCount: countCertificates(combined),
-		Sources:   []string{"mozilla"},
+		Sources:   sources,
 	}
 
 	return nil
@@ -197,6 +210,138 @@ func (s *Store) metadataPath() string {
 // mozillaBundlePath returns the path to the Mozilla CA bundle.
 func (s *Store) mozillaBundlePath() string {
 	return filepath.Join(s.basePath, "certs", "bundles", "mozilla-ca-bundle.pem")
+}
+
+// AddCert adds a certificate to the user certificate store.
+// The certificate is validated before being added. If force is true, expired certificates are allowed.
+func (s *Store) AddCert(ctx context.Context, certPath, name string, force bool) error {
+	// Check if store is initialized
+	if !s.IsInitialized() {
+		return &verifierrors.VerifiError{
+			Op:  "add certificate",
+			Err: verifierrors.ErrStoreNotInit,
+		}
+	}
+
+	// Check context
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Read certificate file
+	certData, err := s.fs.ReadFile(certPath)
+	if err != nil {
+		return &verifierrors.VerifiError{
+			Op:   "read certificate",
+			Path: certPath,
+			Err:  err,
+		}
+	}
+
+	// Validate certificate
+	_, metadata, err := ValidateCert(certData, force)
+	if err != nil {
+		return err
+	}
+
+	// Check context again before writing
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Write certificate to user directory with atomic rename
+	destPath := s.userCertPath(name)
+	tempPath := destPath + ".tmp"
+
+	if err := s.fs.WriteFile(tempPath, certData, 0644); err != nil {
+		return &verifierrors.VerifiError{
+			Op:   "write certificate",
+			Path: tempPath,
+			Err:  err,
+		}
+	}
+
+	if err := s.fs.Rename(tempPath, destPath); err != nil {
+		s.fs.Remove(tempPath)
+		return &verifierrors.VerifiError{
+			Op:   "rename certificate",
+			Path: destPath,
+			Err:  err,
+		}
+	}
+
+	// Update metadata with file locking
+	updateErr := s.UpdateMetadata(ctx, func(md *Metadata) error {
+		// Check if certificate with this name already exists
+		for i, existing := range md.UserCerts {
+			if existing.Name == name {
+				// Replace existing certificate
+				md.UserCerts[i] = UserCertInfo{
+					Name:        name,
+					Path:        "user/" + name + ".pem",
+					Added:       time.Now(),
+					Fingerprint: metadata.Fingerprint,
+					Subject:     metadata.Subject,
+					Expires:     metadata.Expires,
+				}
+				return nil
+			}
+		}
+
+		// Add new certificate
+		md.UserCerts = append(md.UserCerts, UserCertInfo{
+			Name:        name,
+			Path:        "user/" + name + ".pem",
+			Added:       time.Now(),
+			Fingerprint: metadata.Fingerprint,
+			Subject:     metadata.Subject,
+			Expires:     metadata.Expires,
+		})
+
+		return nil
+	})
+
+	if updateErr != nil {
+		// Rollback: remove the certificate file
+		s.fs.Remove(destPath)
+		return updateErr
+	}
+
+	// Rebuild the combined bundle with the new certificate
+	// We need to do this outside the UpdateMetadata function to avoid nesting locks
+	rebuildErr := s.UpdateMetadata(ctx, func(md *Metadata) error {
+		return s.rebuildBundle(ctx, md)
+	})
+
+	if rebuildErr != nil {
+		return &verifierrors.VerifiError{
+			Op:  "rebuild bundle after adding certificate",
+			Err: rebuildErr,
+		}
+	}
+
+	return nil
+}
+
+// ListCerts returns the list of user certificates from metadata.
+func (s *Store) ListCerts() ([]UserCertInfo, error) {
+	if !s.IsInitialized() {
+		return nil, &verifierrors.VerifiError{
+			Op:  "list certificates",
+			Err: verifierrors.ErrStoreNotInit,
+		}
+	}
+
+	metadata, err := s.readMetadata()
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata.UserCerts, nil
 }
 
 // countCertificates counts the number of certificates in a PEM bundle.
