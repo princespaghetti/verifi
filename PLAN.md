@@ -85,6 +85,37 @@
 
 ---
 
+## Phase 3.5: Comprehensive Test Coverage for Foundation ✅
+**Goal**: Add thorough test coverage for Phases 1-3 before building Phase 4+
+
+**Status**: COMPLETED
+
+**Deliverables**:
+- Error handling tests (`internal/errors/errors_test.go`)
+- Embedded bundle tests (`internal/fetcher/embedded_test.go`)
+- File locking tests (`internal/certstore/lock_test.go`)
+- Metadata operation tests (`internal/certstore/metadata_test.go`)
+- Store operation tests (`internal/certstore/store_test.go`)
+- CLI init command tests (`internal/cli/init_test.go`)
+
+**Verification**:
+- All 53+ test cases passing
+- Coverage: certstore 81.6%, errors 100%, fetcher 100%
+- Concurrent access safety validated (goroutine tests)
+- Context cancellation handling verified
+- Atomic file operations confirmed
+- Error wrapping and unwrapping working correctly
+
+**Files Created**:
+- `internal/errors/errors_test.go` (6 tests)
+- `internal/fetcher/embedded_test.go` (6 tests)
+- `internal/certstore/lock_test.go` (7 tests)
+- `internal/certstore/metadata_test.go` (13 tests)
+- `internal/certstore/store_test.go` (18 tests)
+- `internal/cli/init_test.go` (10 tests)
+
+---
+
 ## Phase 4: Shell Environment Generation
 **Goal**: Generate env.sh file for environment variable configuration
 
