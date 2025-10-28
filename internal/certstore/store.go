@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/princespaghetti/verifi/internal/fetcher"
-
 	verifierrors "github.com/princespaghetti/verifi/internal/errors"
 )
 
@@ -169,18 +168,15 @@ func (s *Store) rebuildBundle(ctx context.Context, metadata *Metadata) error {
 		}
 	}
 
-	// Atomic rename (simulated by writing directly for now)
-	if err := s.fs.WriteFile(bundlePath, combined, 0644); err != nil {
+	// Atomic rename (os.Rename is atomic on POSIX systems)
+	if err := s.fs.Rename(tempPath, bundlePath); err != nil {
 		s.fs.Remove(tempPath)
 		return &verifierrors.VerifiError{
-			Op:   "write combined bundle",
+			Op:   "rename bundle",
 			Path: bundlePath,
 			Err:  err,
 		}
 	}
-
-	// Clean up temp file
-	s.fs.Remove(tempPath)
 
 	// Update metadata
 	metadata.CombinedBundle = BundleInfo{

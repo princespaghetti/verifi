@@ -19,6 +19,7 @@ type FileSystem interface {
 	WriteFile(path string, data []byte, perm os.FileMode) error
 	MkdirAll(path string, perm os.FileMode) error
 	Remove(path string) error
+	Rename(oldpath, newpath string) error
 	Stat(path string) (fs.FileInfo, error)
 	ReadDir(path string) ([]fs.DirEntry, error)
 }
@@ -44,6 +45,12 @@ func (fs *OSFileSystem) MkdirAll(path string, perm os.FileMode) error {
 // Remove removes the file or directory at the given path.
 func (fs *OSFileSystem) Remove(path string) error {
 	return os.Remove(path)
+}
+
+// Rename renames (moves) oldpath to newpath.
+// This operation is atomic on POSIX systems.
+func (fs *OSFileSystem) Rename(oldpath, newpath string) error {
+	return os.Rename(oldpath, newpath)
 }
 
 // Stat returns file info for the given path.

@@ -103,19 +103,15 @@ func (s *Store) writeMetadata(m *Metadata) error {
 		}
 	}
 
-	// Atomic rename
-	// Note: os.Rename is atomic on POSIX systems
-	if err := s.fs.WriteFile(s.metadataPath(), data, 0644); err != nil {
+	// Atomic rename (os.Rename is atomic on POSIX systems)
+	if err := s.fs.Rename(tempPath, s.metadataPath()); err != nil {
 		s.fs.Remove(tempPath)
 		return &verifierrors.VerifiError{
-			Op:   "write metadata",
+			Op:   "rename metadata",
 			Path: s.metadataPath(),
 			Err:  err,
 		}
 	}
-
-	// Clean up temp file if it still exists
-	s.fs.Remove(tempPath)
 
 	return nil
 }

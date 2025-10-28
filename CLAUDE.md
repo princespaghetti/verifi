@@ -113,6 +113,8 @@ internal/
     embedded.go                         # Embedded bundle handling
     verify.go                           # Verify bundle integrity (hash)
     interfaces.go                       # HTTPClient interface for testing
+    assets/
+      mozilla-ca-bundle.pem             # Embedded Mozilla bundle (go:embed)
 
   verifier/
     verify.go                           # Test HTTPS connections
@@ -128,9 +130,6 @@ internal/
     status.go                           # status command
     verify.go                           # verify command
     output.go                           # Formatted output (tables, colors)
-
-assets/
-  mozilla-ca-bundle.pem                 # Embedded Mozilla bundle (go:embed)
 ```
 
 ## Critical Go Patterns
@@ -509,7 +508,7 @@ package fetcher
 
 import _ "embed"
 
-//go:embed ../assets/mozilla-ca-bundle.pem
+//go:embed assets/mozilla-ca-bundle.pem
 var embeddedMozillaBundle []byte
 
 func GetEmbeddedBundle() []byte {

@@ -30,7 +30,7 @@
 **Status**: COMPLETED
 
 **Deliverables**:
-- Obtain Mozilla CA bundle for embedding (one-time development step: download from https://curl.se/ca/cacert.pem to `assets/mozilla-ca-bundle.pem` and commit to repo)
+- Obtain Mozilla CA bundle for embedding (one-time development step: download from https://curl.se/ca/cacert.pem to `internal/fetcher/assets/mozilla-ca-bundle.pem` and commit to repo)
 - Embedded bundle handling using `go:embed` - completely offline at runtime (`internal/fetcher/embedded.go`)
 - File locking implementation (`internal/certstore/lock.go`, `interfaces.go`)
 - Core Store type (`internal/certstore/store.go`)
@@ -44,7 +44,7 @@
 - Running `verifi init` twice shows appropriate error (already initialized)
 
 **Files to Create**:
-- `assets/mozilla-ca-bundle.pem` (one-time: download from curl.se, commit to repo, embedded at build time)
+- `internal/fetcher/assets/mozilla-ca-bundle.pem` (one-time: download from curl.se, commit to repo, embedded at build time)
 - `internal/fetcher/embedded.go`
 - `internal/certstore/interfaces.go`
 - `internal/certstore/lock.go`
