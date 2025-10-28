@@ -12,7 +12,7 @@ LDFLAGS=-ldflags "-X github.com/princespaghetti/verifi/internal/cli.Version=$(VE
 	-X github.com/princespaghetti/verifi/internal/cli.GitCommit=$(GIT_COMMIT) \
 	-X github.com/princespaghetti/verifi/internal/cli.BuildDate=$(BUILD_DATE)"
 
-.PHONY: all build install test test-coverage test-verbose lint fmt clean help
+.PHONY: all build install test test-coverage test-verbose lint fmt clean clean-store help
 
 # Default target
 all: build
@@ -72,6 +72,12 @@ clean:
 	rm -f $(BINARY_NAME)
 	rm -f coverage.out
 
+# Clean the certificate store (useful for local development/testing)
+clean-store:
+	@echo "Removing certificate store at ~/.verifi..."
+	@rm -rf ~/.verifi
+	@echo "Certificate store removed"
+
 # Display help
 help:
 	@echo "Available targets:"
@@ -85,4 +91,5 @@ help:
 	@echo "  lint           - Run golangci-lint"
 	@echo "  fmt            - Format code with go fmt"
 	@echo "  clean          - Remove build artifacts"
+	@echo "  clean-store    - Remove ~/.verifi certificate store (for local dev/testing)"
 	@echo "  help           - Display this help message"

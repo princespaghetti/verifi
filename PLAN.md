@@ -24,8 +24,10 @@
 
 ---
 
-## Phase 2: Core Certificate Store & Initialization
+## Phase 2: Core Certificate Store & Initialization ✅
 **Goal**: Implement directory structure creation with embedded Mozilla bundle
+
+**Status**: COMPLETED
 
 **Deliverables**:
 - Obtain Mozilla CA bundle for embedding (one-time development step: download from https://curl.se/ca/cacert.pem to `assets/mozilla-ca-bundle.pem` and commit to repo)
