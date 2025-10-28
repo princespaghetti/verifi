@@ -54,8 +54,10 @@
 
 ---
 
-## Phase 3: Certificate Management
+## Phase 3: Certificate Management ✅
 **Goal**: Add, list, and manage user certificates with bundle building
+
+**Status**: COMPLETED
 
 **Deliverables**:
 - Certificate validation (`internal/certstore/validate.go`)
@@ -69,14 +71,17 @@
 - `verifi cert add` rejects expired certs (unless `--force`)
 - `verifi cert add` rejects invalid PEM format
 - `verifi cert list` shows added certificates with details
+- `verifi cert list --json` outputs valid JSON
+- `verifi cert list --expired` filters expired certificates
 - `combined-bundle.pem` contains Mozilla bundle + user certs
 - `metadata.json` tracks all user certificates
 
-**Files to Create**:
+**Files Created**:
 - `internal/certstore/validate.go`
 - `internal/certstore/bundle.go`
 - `internal/cli/cert.go`
-- Tests: `internal/certstore/validate_test.go`, `bundle_test.go`
+- `internal/certstore/validate_test.go`
+- `internal/certstore/bundle_test.go`
 
 ---
 
