@@ -116,9 +116,6 @@ internal/
     assets/
       mozilla-ca-bundle.pem             # Embedded Mozilla bundle (go:embed)
 
-  verifier/
-    verify.go                           # Test HTTPS connections
-
   errors/
     errors.go                           # Custom error types with wrapping
 
@@ -128,7 +125,6 @@ internal/
     init.go                             # init command
     update.go                           # update command
     status.go                           # status command
-    verify.go                           # verify command
     output.go                           # Formatted output (tables, colors)
 ```
 
@@ -558,9 +554,8 @@ verifi cert inspect <name>
 verifi bundle update [--check-only] [--url <custom-url>]
 verifi bundle info [--json]
 
-# Status and verification
+# Status and information
 verifi status [--json]
-verifi verify [--url <url>] [--json]
 
 # Diagnostics and cleanup
 verifi doctor [--verbose] [--json]
@@ -582,7 +577,6 @@ func init() {
     rootCmd.AddCommand(certCmd)
     rootCmd.AddCommand(bundleCmd)
     rootCmd.AddCommand(statusCmd)
-    rootCmd.AddCommand(verifyCmd)
     rootCmd.AddCommand(doctorCmd)
     rootCmd.AddCommand(cleanCmd)
 }
@@ -791,47 +785,6 @@ func LoadMetadata(path string) (*Metadata, error) {
 }
 ```
 
-### 3. Simple HTTPS Verification
-
-```go
-func VerifyConnection(ctx context.Context, url string, certPath string) error {
-    // Load cert pool
-    caCert, err := os.ReadFile(certPath)
-    if err != nil {
-        return fmt.Errorf("read cert: %w", err)
-    }
-
-    caCertPool := x509.NewCertPool()
-    if !caCertPool.AppendCertsFromPEM(caCert) {
-        return fmt.Errorf("failed to add cert to pool")
-    }
-
-    // Create HTTP client
-    client := &http.Client{
-        Transport: &http.Transport{
-            TLSClientConfig: &tls.Config{
-                RootCAs: caCertPool,
-            },
-        },
-        Timeout: 10 * time.Second,
-    }
-
-    // Test connection
-    req, err := http.NewRequestWithContext(ctx, "HEAD", url, nil)
-    if err != nil {
-        return err
-    }
-
-    resp, err := client.Do(req)
-    if err != nil {
-        return fmt.Errorf("connection failed: %w", err)
-    }
-    defer resp.Body.Close()
-
-    return nil
-}
-```
-
 ## Testing Approach
 
 ### Unit Tests
@@ -841,7 +794,7 @@ func VerifyConnection(ctx context.Context, url string, certPath string) error {
 - Test error conditions thoroughly
 
 ### Integration Tests
-- Test full workflows (init → add cert → rebuild → verify)
+- Test full workflows (init → add cert → rebuild → status)
 - Use temp directories for isolation
 - Test concurrent operations with file locking
 - Test rollback on failures
@@ -854,7 +807,7 @@ func VerifyConnection(ctx context.Context, url string, certPath string) error {
 - Bundle rebuild after cert add/remove
 - Embedded bundle initialization
 - Mozilla bundle update (network success/failure)
-- HTTPS verification with combined bundle
+- Status display with various store states
 - Partial operation failures (rollback verification)
 
 ## Common Development Workflows
@@ -871,8 +824,12 @@ verifi cert add /path/to/corp-ca.crt --name corporate
 echo 'source ~/.verifi/env.sh' >> ~/.zshrc
 source ~/.zshrc
 
-# Verify it works
-verifi verify --url https://registry.npmjs.org
+# Check status
+verifi status
+
+# Test with your actual tools
+curl -v https://registry.npmjs.org
+npm ping
 ```
 
 ### Adding Certificates
@@ -918,8 +875,10 @@ verifi status
 # Run diagnostics
 verifi doctor --verbose
 
-# Test specific URL
-verifi verify --url https://internal.company.com
+# Test with actual tools to verify certificates work
+curl -v https://internal.company.com
+npm config get registry
+git ls-remote https://github.com/user/repo.git
 
 # Get JSON output for scripting
 verifi status --json
@@ -973,10 +932,11 @@ verifi status --json
 - Faster initialization
 - Updates are optional, not required
 
-### Why Simple Verification?
-- Basic HTTPS connection tests are sufficient
-- No need for tool-specific verification
-- If HTTPS works with the bundle, tools will work
+### Why No Built-in Verification?
+- verifi configures environment variables - testing with Go HTTP client doesn't validate that npm, pip, git, etc. will work
+- Each tool (npm, pip, curl, etc.) has its own TLS/SSL implementation
+- Users should test with their actual tools: `curl -v https://...`, `npm ping`, etc.
+- Simple, focused tool - configuration only, not testing
 
 ## Exit Codes
 

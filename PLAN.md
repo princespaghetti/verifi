@@ -145,27 +145,38 @@
 
 ---
 
-## Phase 5: Verification & Status
-**Goal**: Test HTTPS connections and show certificate store status
+## Phase 5: Status & Information Display
+**Goal**: Show certificate store status and configuration (no connection testing)
 
 **Deliverables**:
-- HTTPS verification (`internal/verifier/verify.go`)
-- `verifi verify [--url <url>]` command
-- `verifi status [--json]` command
-- Output formatting utilities (`internal/cli/output.go`)
+- `verifi status [--json]` command to display store information
+- Output formatting utilities (`internal/cli/output.go`) - optional, may inline
+
+**Status Information Displayed**:
+- Certificate store location (~/.verifi)
+- Store initialization status
+- Number of user certificates (from metadata)
+- Combined bundle details (cert count, file path, size)
+- env.sh status (exists, location)
+- Mozilla bundle info (source: embedded, cert count)
+- Last updated timestamps (from metadata)
+- JSON output option for scripting/automation
 
 **Verification**:
-- `verifi verify` tests connection to default URL (registry.npmjs.org)
-- `verifi verify --url <custom>` tests custom URLs
-- Verification fails gracefully with clear error messages
-- `verifi status` shows: store initialized, cert count, bundle info, last updated
-- `verifi status --json` outputs machine-readable JSON
+- `verifi status` displays all store information in clear, readable format
+- `verifi status --json` outputs valid, parseable JSON
+- Shows helpful message if store not initialized
+- No network connections or HTTPS testing (fast, offline-first)
+- All information from local file reads only
 
 **Files to Create**:
-- `internal/verifier/verify.go`
-- `internal/cli/verify.go`
 - `internal/cli/status.go`
-- `internal/cli/output.go`
+- `internal/cli/output.go` (optional - formatting utilities if needed)
+
+**Design Note**: Removed `verifi verify` command from original plan. HTTPS connection
+testing with Go doesn't validate that npm, pip, git, curl, etc. will work since those
+tools read environment variables independently. Users should test with their actual
+tools (e.g., `curl -v https://registry.npmjs.org`, `npm ping`, etc.).
 
 ---
 
