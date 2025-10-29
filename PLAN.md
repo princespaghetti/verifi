@@ -236,23 +236,34 @@ tools (e.g., `curl -v https://registry.npmjs.org`, `npm ping`, etc.).
 **Deliverables**:
 - `verifi cert remove <name>` command
 - `verifi cert inspect <name>` command
-- `verifi doctor [--verbose]` diagnostics command
+- `verifi doctor [--verbose]` diagnostics command - validates store integrity and configuration
 - `verifi clean [--full]` cleanup command
 - `verifi bundle reset` command (restore to embedded bundle) - deferred from Phase 6
 - Integration tests for full workflows
 
+**Doctor Command Checks**:
+- Store directory structure exists and is accessible
+- metadata.json is valid JSON with expected schema version
+- Bundle files (mozilla-ca-bundle.pem, combined-bundle.pem) exist and contain valid PEM data
+- User certificate files exist and contain valid, non-expired certificates
+- env.sh exists and contains correct environment variable assignments
+- Bundle integrity (SHA256 hash matches metadata)
+- File permissions allow read access
+- Outputs actionable repair suggestions (e.g., "Run 'verifi init --force' to recreate store")
+
 **Verification**:
 - `verifi cert remove` removes cert and rebuilds bundle
-- `verifi cert inspect` shows detailed cert info (subject, expiry, fingerprint)
-- `verifi doctor` validates store integrity, checks for issues, suggests repairs
-- `verifi clean` removes temp files; `--full` removes entire store
-- `verifi bundle reset` restores embedded Mozilla bundle (workaround: `verifi init --force`)
-- Integration test: `init → add cert → status → remove → clean`
+- `verifi cert inspect` shows detailed cert info (subject, expiry, fingerprint, issuer)
+- `verifi doctor` identifies and reports store issues with suggested fixes
+- `verifi doctor --verbose` shows detailed diagnostic information
+- `verifi clean` removes temp files; `--full` removes entire store with confirmation
+- `verifi bundle reset` restores embedded Mozilla bundle
+- Integration test: `init → add cert → status → doctor (clean) → remove → doctor (issues) → clean`
 
 **Files to Create**:
 - Update `internal/cli/cert.go` with remove/inspect commands
-- `internal/cli/doctor.go`
-- `internal/cli/clean.go`
+- `internal/cli/doctor.go` - Diagnostic checks with repair suggestions
+- `internal/cli/clean.go` - Temp file and full cleanup
 - Update `internal/cli/bundle.go` with reset command
 - `internal/certstore/store_integration_test.go`
 

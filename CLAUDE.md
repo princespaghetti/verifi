@@ -121,10 +121,13 @@ internal/
 
   cli/
     root.go                             # Cobra root command setup
-    cert.go                             # cert subcommands
+    cert.go                             # cert subcommands (add, list, remove, inspect)
     init.go                             # init command
-    update.go                           # update command
+    bundle.go                           # bundle subcommands (update, info, reset)
+    env.go                              # env command
     status.go                           # status command
+    doctor.go                           # doctor command
+    clean.go                            # clean command
     output.go                           # Formatted output (tables, colors)
 ```
 
@@ -794,7 +797,7 @@ func LoadMetadata(path string) (*Metadata, error) {
 - Test error conditions thoroughly
 
 ### Integration Tests
-- Test full workflows (init → add cert → rebuild → status)
+- Test full workflows (init → add cert → status → doctor → remove → doctor → clean)
 - Use temp directories for isolation
 - Test concurrent operations with file locking
 - Test rollback on failures
