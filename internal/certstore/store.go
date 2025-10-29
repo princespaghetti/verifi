@@ -344,6 +344,19 @@ func (s *Store) ListCerts() ([]UserCertInfo, error) {
 	return metadata.UserCerts, nil
 }
 
+// GetMetadata returns the current metadata from the store.
+// Returns an error if the store is not initialized.
+func (s *Store) GetMetadata() (*Metadata, error) {
+	if !s.IsInitialized() {
+		return nil, &verifierrors.VerifiError{
+			Op:  "get metadata",
+			Err: verifierrors.ErrStoreNotInit,
+		}
+	}
+
+	return s.readMetadata()
+}
+
 // countCertificates counts the number of certificates in a PEM bundle.
 func countCertificates(pemData []byte) int {
 	count := 0

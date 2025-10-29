@@ -145,8 +145,10 @@
 
 ---
 
-## Phase 5: Status & Information Display
+## Phase 5: Status & Information Display ✅
 **Goal**: Show certificate store status and configuration (no connection testing)
+
+**Status**: COMPLETED
 
 **Deliverables**:
 - `verifi status [--json]` command to display store information
@@ -169,9 +171,12 @@
 - No network connections or HTTPS testing (fast, offline-first)
 - All information from local file reads only
 
-**Files to Create**:
-- `internal/cli/status.go`
-- `internal/cli/output.go` (optional - formatting utilities if needed)
+**Files Created**:
+- `internal/cli/status.go` - Status command implementation with human and JSON output
+- `internal/cli/status_test.go` - Comprehensive tests (10 tests)
+
+**Files Modified**:
+- `internal/certstore/store.go` - Added GetMetadata() public method
 
 **Design Note**: Removed `verifi verify` command from original plan. HTTPS connection
 testing with Go doesn't validate that npm, pip, git, curl, etc. will work since those
