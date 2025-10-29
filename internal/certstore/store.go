@@ -357,6 +357,13 @@ func (s *Store) GetMetadata() (*Metadata, error) {
 	return s.readMetadata()
 }
 
+// RebuildBundle rebuilds the combined certificate bundle.
+// This is a public wrapper around rebuildBundle for use by bundle update operations.
+// It should be called within an UpdateMetadata callback to ensure proper locking.
+func (s *Store) RebuildBundle(ctx context.Context, metadata *Metadata) error {
+	return s.rebuildBundle(ctx, metadata)
+}
+
 // countCertificates counts the number of certificates in a PEM bundle.
 func countCertificates(pemData []byte) int {
 	count := 0

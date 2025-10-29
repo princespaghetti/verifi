@@ -185,8 +185,10 @@ tools (e.g., `curl -v https://registry.npmjs.org`, `npm ping`, etc.).
 
 ---
 
-## Phase 6: Mozilla Bundle Updates
+## Phase 6: Mozilla Bundle Updates ✅
 **Goal**: Fetch and update Mozilla CA bundle from network
+
+**Status**: COMPLETED
 
 **Deliverables**:
 - HTTP client for fetching bundles (`internal/fetcher/mozilla.go`)
@@ -217,11 +219,14 @@ tools (e.g., `curl -v https://registry.npmjs.org`, `npm ping`, etc.).
 7. **Simple progress message** - "Downloading..." text, no progress bar until Phase 8
 8. **Bundle reset deferred** - No `verifi bundle reset` command in Phase 6, users can use `verifi init --force` as workaround, proper reset command in Phase 7
 
-**Files to Create**:
+**Files Created**:
 - `internal/fetcher/mozilla.go` - HTTP download logic with context support
 - `internal/fetcher/verify.go` - Bundle verification (PEM validation, cert counting, degradation check)
 - `internal/fetcher/interfaces.go` - HTTPClient interface for testing
 - `internal/cli/bundle.go` - Bundle commands (update, info)
+- `internal/fetcher/mozilla_test.go` - Comprehensive HTTP client tests
+- `internal/fetcher/verify_test.go` - Bundle verification tests
+- `internal/cli/bundle_test.go` - CLI command tests
 
 ---
 
