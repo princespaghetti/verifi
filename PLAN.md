@@ -116,8 +116,10 @@
 
 ---
 
-## Phase 4: Shell Environment Generation
+## Phase 4: Shell Environment Generation ✅
 **Goal**: Generate env.sh file for environment variable configuration
+
+**Status**: COMPLETED
 
 **Deliverables**:
 - Shell environment file generation (`internal/shell/envfile.go`)
@@ -133,10 +135,13 @@
 - `verifi init` prints clear instructions for adding to shell config
 - Paths work cross-platform (using `filepath.ToSlash()`)
 
-**Files to Create**:
-- `internal/shell/envfile.go`
-- `internal/shell/envfile_test.go`
-- `internal/cli/env.go`
+**Files Created**:
+- `internal/shell/envfile.go` - env.sh generation with all 6 environment variables
+- `internal/shell/envfile_test.go` - 8 comprehensive tests (100% coverage)
+- `internal/cli/env.go` - verifi env command implementation
+
+**Files Modified**:
+- `internal/cli/init.go` - Added env.sh generation after store initialization
 
 ---
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/princespaghetti/verifi/internal/certstore"
 	verifierrors "github.com/princespaghetti/verifi/internal/errors"
+	"github.com/princespaghetti/verifi/internal/shell"
 )
 
 var (
@@ -69,19 +70,18 @@ func runInit(cmd *cobra.Command, args []string) error {
 		os.Exit(verifierrors.ExitGeneralError)
 	}
 
+	// Generate env.sh file
+	envPath := shell.EnvFilePath(store.BasePath())
+	if err := shell.GenerateEnvFile(store.BasePath(), store.CombinedBundlePath()); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: Failed to generate env.sh: %v\n", err)
+		// Don't exit - store is still usable without env.sh
+	}
+
 	fmt.Printf("✓ Certificate store initialized successfully\n")
 	fmt.Printf("✓ Mozilla CA bundle extracted (%s)\n", store.CombinedBundlePath())
-	fmt.Printf("\n")
-	fmt.Printf("Next steps:\n")
-	fmt.Printf("  1. Add corporate certificates (if needed):\n")
-	fmt.Printf("     verifi cert add /path/to/cert.pem --name corporate\n")
-	fmt.Printf("\n")
-	fmt.Printf("  2. Configure your shell (Phase 4 will add env.sh generation):\n")
-	fmt.Printf("     export SSL_CERT_FILE=%s\n", store.CombinedBundlePath())
-	fmt.Printf("\n")
-	fmt.Printf("  3. Verify it works:\n")
-	fmt.Printf("     verifi verify --url https://registry.npmjs.org\n")
-	fmt.Printf("\n")
+
+	// Print setup instructions
+	shell.PrintSetupInstructions(envPath)
 
 	return nil
 }
