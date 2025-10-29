@@ -122,10 +122,12 @@
 **Deliverables**:
 - Shell environment file generation (`internal/shell/envfile.go`)
 - Update `verifi init` to generate env.sh
+- `verifi env` command for regenerating env.sh
 - Setup instructions printer
 
 **Verification**:
 - `verifi init` generates `~/.verifi/env.sh`
+- `verifi env` regenerates `~/.verifi/env.sh` (requires initialized store)
 - env.sh contains all required environment variables pointing to combined-bundle.pem
 - Sourcing env.sh sets `SSL_CERT_FILE`, `NODE_EXTRA_CA_CERTS`, etc.
 - `verifi init` prints clear instructions for adding to shell config
@@ -134,6 +136,7 @@
 **Files to Create**:
 - `internal/shell/envfile.go`
 - `internal/shell/envfile_test.go`
+- `internal/cli/env.go`
 
 ---
 
@@ -235,6 +238,30 @@
 - `internal/cli/completion.go`
 - Update `internal/cli/output.go` with colors/tables
 - `README.md` (comprehensive)
+
+---
+
+## Phase 9: Java Keystore Integration (Future)
+**Goal**: Add Java keystore management using keytool for complete ecosystem coverage
+
+**Deliverables**:
+- Java installation detection
+- `verifi java add <name>` - Add certificates to Java keystores using keytool
+- `verifi java list` - Show certificates in Java keystores
+- `verifi java remove <name>` - Remove certificates from Java keystores
+- Support for multiple Java versions/installations
+
+**Verification**:
+- Detects Java installations automatically
+- `verifi java add` imports certificates into cacerts keystore
+- `verifi java list` shows certificates in keystore
+- Works with multiple Java versions (Oracle, OpenJDK, etc.)
+- Handles keystore passwords appropriately
+
+**Files to Create**:
+- `internal/java/detect.go` - Java installation detection
+- `internal/java/keystore.go` - Keytool operations
+- `internal/cli/java.go` - Java command implementations
 
 ---
 
