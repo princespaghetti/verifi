@@ -190,24 +190,38 @@ tools (e.g., `curl -v https://registry.npmjs.org`, `npm ping`, etc.).
 
 **Deliverables**:
 - HTTP client for fetching bundles (`internal/fetcher/mozilla.go`)
-- Bundle integrity verification (`internal/fetcher/verify.go`)
-- `verifi bundle update [--check-only] [--url <custom>]` command
-- `verifi bundle info` command to show bundle version and details
+- Bundle verification (`internal/fetcher/verify.go`) - PEM parsing, cert count check, degradation warning
+- HTTP client interface for testing (`internal/fetcher/interfaces.go`)
+- `verifi bundle update [--url <custom-url>]` command - download and install
+- `verifi bundle info [--json]` command - show current bundle details
 
 **Verification**:
-- `verifi bundle update --check-only` shows if newer bundle available
-- `verifi bundle update` downloads and replaces Mozilla bundle
-- `verifi bundle info` displays bundle version, cert count, SHA256
+- `verifi bundle update` downloads from https://curl.se/ca/cacert.pem (default)
+- `verifi bundle update --url <custom>` downloads from custom URL
+- `verifi bundle info` displays: source, Mozilla date (parsed from header), cert count, SHA256, size
+- `verifi bundle info --json` outputs machine-readable JSON
+- Verification checks: valid PEM format, cert count >= 100, warns if certs decrease >20%
 - Update uses atomic rename pattern (temp file + rename)
-- Failed download doesn't corrupt existing bundle
-- `metadata.json` updated with new bundle version and SHA256
-- `combined-bundle.pem` rebuilt after update
+- Network failure keeps existing bundle intact (exit with ExitNetworkError)
+- Verification failure keeps existing bundle intact (exit with ExitCertError)
+- Metadata updated with: Mozilla date (parsed from bundle header), download timestamp, SHA256, cert count, source URL
+- `combined-bundle.pem` rebuilt after successful Mozilla bundle update
+
+**Design Decisions for Phase 6 MVP**:
+1. **No `--check-only` flag** - curl.se doesn't provide version API, bundle is small (~220KB), users run update when desired
+2. **Auto-download without confirmation** - running the command is explicit consent, keeps it scriptable
+3. **Basic validation** - PEM parsing + cert count >= 100 + warn if cert count drops >20% from current
+4. **No automatic rollback** - errors handled by failing cleanly with clear messages, store repairs added in Phase 7
+5. **Parse Mozilla date** - Extract version date from bundle header comments (e.g., "Certificate data from Mozilla as of: Tue Sep 9...")
+6. **Custom URL via `--url` flag** - No config file support until Phase 8 (polish)
+7. **Simple progress message** - "Downloading..." text, no progress bar until Phase 8
+8. **Bundle reset deferred** - No `verifi bundle reset` command in Phase 6, users can use `verifi init --force` as workaround, proper reset command in Phase 7
 
 **Files to Create**:
-- `internal/fetcher/mozilla.go`
-- `internal/fetcher/verify.go`
-- `internal/fetcher/interfaces.go`
-- `internal/cli/bundle.go`
+- `internal/fetcher/mozilla.go` - HTTP download logic with context support
+- `internal/fetcher/verify.go` - Bundle verification (PEM validation, cert counting, degradation check)
+- `internal/fetcher/interfaces.go` - HTTPClient interface for testing
+- `internal/cli/bundle.go` - Bundle commands (update, info)
 
 ---
 
@@ -219,19 +233,22 @@ tools (e.g., `curl -v https://registry.npmjs.org`, `npm ping`, etc.).
 - `verifi cert inspect <name>` command
 - `verifi doctor [--verbose]` diagnostics command
 - `verifi clean [--full]` cleanup command
+- `verifi bundle reset` command (restore to embedded bundle) - deferred from Phase 6
 - Integration tests for full workflows
 
 **Verification**:
 - `verifi cert remove` removes cert and rebuilds bundle
 - `verifi cert inspect` shows detailed cert info (subject, expiry, fingerprint)
-- `verifi doctor` validates store integrity, checks for issues
+- `verifi doctor` validates store integrity, checks for issues, suggests repairs
 - `verifi clean` removes temp files; `--full` removes entire store
-- Integration test: `init → add cert → verify → remove → clean`
+- `verifi bundle reset` restores embedded Mozilla bundle (workaround: `verifi init --force`)
+- Integration test: `init → add cert → status → remove → clean`
 
 **Files to Create**:
 - Update `internal/cli/cert.go` with remove/inspect commands
 - `internal/cli/doctor.go`
 - `internal/cli/clean.go`
+- Update `internal/cli/bundle.go` with reset command
 - `internal/certstore/store_integration_test.go`
 
 ---
