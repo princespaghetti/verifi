@@ -2,9 +2,11 @@ package certstore
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -76,8 +78,10 @@ func TestFileLock_ConcurrentAccess(t *testing.T) {
 	const numGoroutines = 10
 	const incrementsPerGoroutine = 100
 
-	counter := 0
+	var counter int32
 	var wg sync.WaitGroup
+	var errCount int32
+
 	wg.Add(numGoroutines)
 
 	// Launch multiple goroutines that increment a counter
@@ -91,15 +95,15 @@ func TestFileLock_ConcurrentAccess(t *testing.T) {
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 				if err := lock.Lock(ctx); err != nil {
-					t.Errorf("Lock() failed in goroutine: %v", err)
+					atomic.AddInt32(&errCount, 1)
 					cancel()
 					return
 				}
 
 				// Critical section - increment counter
-				temp := counter
+				temp := atomic.LoadInt32(&counter)
 				time.Sleep(1 * time.Millisecond) // Simulate work
-				counter = temp + 1
+				atomic.StoreInt32(&counter, temp+1)
 
 				lock.Unlock()
 				cancel()
@@ -109,9 +113,15 @@ func TestFileLock_ConcurrentAccess(t *testing.T) {
 
 	wg.Wait()
 
-	expected := numGoroutines * incrementsPerGoroutine
-	if counter != expected {
-		t.Errorf("Counter = %d, want %d (race condition detected)", counter, expected)
+	// Check for errors
+	if errCount > 0 {
+		t.Errorf("Lock() failed %d times in goroutines", errCount)
+	}
+
+	expected := int32(numGoroutines * incrementsPerGoroutine)
+	finalCounter := atomic.LoadInt32(&counter)
+	if finalCounter != expected {
+		t.Errorf("Counter = %d, want %d (race condition detected)", finalCounter, expected)
 	}
 }
 
@@ -155,11 +165,9 @@ func TestFileLock_ContextCancellation(t *testing.T) {
 		t.Errorf("Lock cancellation was too slow: %v", elapsed)
 	}
 
-	// Verify the error is context.Canceled
-	if err != context.Canceled && err != nil {
-		if err.Error() != context.Canceled.Error() {
-			t.Logf("Note: Got error %v instead of context.Canceled (may be wrapped)", err)
-		}
+	// Verify the error is context.Canceled (or wraps it)
+	if err != nil && !errors.Is(err, context.Canceled) {
+		t.Errorf("Expected context.Canceled error, got: %v", err)
 	}
 }
 
