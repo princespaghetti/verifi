@@ -146,9 +146,12 @@ func TestPrintBundleInfoHuman(t *testing.T) {
 
 	// Verify output contains expected information
 	assert.Contains(t, captured, "Mozilla CA Bundle Information")
-	assert.Contains(t, captured, "Source:          embedded")
-	assert.Contains(t, captured, "Version:         2025-09-09")
-	assert.Contains(t, captured, "Certificates:    137")
+	assert.Contains(t, captured, "Source")
+	assert.Contains(t, captured, "embedded")
+	assert.Contains(t, captured, "Version")
+	assert.Contains(t, captured, "2025-09-09")
+	assert.Contains(t, captured, "Certificates")
+	assert.Contains(t, captured, "137")
 	assert.Contains(t, captured, "abc123def456")
 	assert.Contains(t, captured, "200.0 KB")
 }

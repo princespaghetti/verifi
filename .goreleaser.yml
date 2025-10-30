@@ -1,0 +1,159 @@
+# GoReleaser configuration for verifi
+# Documentation: https://goreleaser.com
+version: 2
+
+# Project name
+project_name: verifi
+
+# Before hooks - run before building
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+# Build configuration
+builds:
+  - # Binary name
+    binary: verifi
+
+    # Main package to build
+    main: ./cmd/verifi
+
+    # Environment variables for the build
+    env:
+      - CGO_ENABLED=0
+
+    # Build flags
+    flags:
+      - -trimpath
+
+    # Linker flags - inject version information
+    ldflags:
+      - -s -w
+      - -X github.com/princespaghetti/verifi/internal/cli.Version={{.Version}}
+      - -X github.com/princespaghetti/verifi/internal/cli.GitCommit={{.Commit}}
+      - -X github.com/princespaghetti/verifi/internal/cli.BuildDate={{.Date}}
+
+    # Target platforms
+    goos:
+      - linux
+      - darwin
+
+    # Target architectures
+    goarch:
+      - amd64
+      - arm64
+
+    # Ignore combinations (if any)
+    ignore:
+      []
+
+# Archive configuration
+archives:
+  - # Name template for archives
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+    # Files to include in archive (in addition to the binary)
+    files:
+      - LICENSE
+      - README.md
+      - PLAN.md
+
+# Checksums
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+# Snapshot configuration (for local builds without tags)
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+# Changelog configuration
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+  groups:
+    - title: "New Features"
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug Fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: "Performance Improvements"
+      regexp: "^.*perf[(\\w)]*:+.*$"
+      order: 2
+    - title: "Other Changes"
+      order: 999
+
+# Release configuration
+release:
+  # GitHub release configuration
+  github:
+    owner: princespaghetti
+    name: verifi
+
+  # Pre-release detection
+  prerelease: auto
+
+  # Draft release (set to false for automatic releases)
+  draft: false
+
+  # Footer template
+  footer: |
+    ## Installation
+
+    ### macOS
+
+    **Homebrew** (coming soon):
+    ```bash
+    brew install princespaghetti/tap/verifi
+    ```
+
+    **Manual installation**:
+    ```bash
+    # Download the appropriate binary for your architecture
+    # For M1/M2 Macs (arm64):
+    curl -LO https://github.com/princespaghetti/verifi/releases/download/{{ .Tag }}/verifi_{{ .Version }}_darwin_arm64.tar.gz
+
+    # For Intel Macs (amd64):
+    curl -LO https://github.com/princespaghetti/verifi/releases/download/{{ .Tag }}/verifi_{{ .Version }}_darwin_amd64.tar.gz
+
+    # Extract and install
+    tar -xzf verifi_{{ .Version }}_darwin_*.tar.gz
+    sudo mv verifi /usr/local/bin/
+    sudo chmod +x /usr/local/bin/verifi
+    ```
+
+    ### Linux
+
+    ```bash
+    # Download the appropriate binary for your architecture
+    # For amd64:
+    curl -LO https://github.com/princespaghetti/verifi/releases/download/{{ .Tag }}/verifi_{{ .Version }}_linux_amd64.tar.gz
+
+    # For arm64:
+    curl -LO https://github.com/princespaghetti/verifi/releases/download/{{ .Tag }}/verifi_{{ .Version }}_linux_arm64.tar.gz
+
+    # Extract and install
+    tar -xzf verifi_{{ .Version }}_linux_*.tar.gz
+    sudo mv verifi /usr/local/bin/
+    sudo chmod +x /usr/local/bin/verifi
+    ```
+
+    ### Verify Installation
+
+    ```bash
+    verifi version
+    ```
+
+    ---
+
+    **Full Changelog**: https://github.com/princespaghetti/verifi/compare/{{ .PreviousTag }}...{{ .Tag }}

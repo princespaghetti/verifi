@@ -56,11 +56,11 @@ func runEnv(cmd *cobra.Command, args []string) error {
 	// Generate env.sh
 	envPath := shell.EnvFilePath(store.BasePath())
 	if err := shell.GenerateEnvFile(store.BasePath(), store.CombinedBundlePath()); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Failed to generate env.sh: %v\n", err)
+		Error("Failed to generate env.sh: %v", err)
 		os.Exit(verifierrors.ExitGeneralError)
 	}
 
-	fmt.Printf("✓ Environment file regenerated: %s\n", envPath)
+	Success("Environment file regenerated: %s", envPath)
 
 	// Print setup instructions
 	shell.PrintSetupInstructions(envPath)

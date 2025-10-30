@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"os"
@@ -130,10 +129,8 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	}
 
 	if doctorJSON {
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", "  ")
-		if err := encoder.Encode(output); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: Failed to encode JSON: %v\n", err)
+		if err := JSON(output); err != nil {
+			Error("Failed to encode JSON: %v", err)
 			os.Exit(verifierrors.ExitGeneralError)
 		}
 	} else {
@@ -149,22 +146,11 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 }
 
 func printDoctorOutput(output DoctorOutput) {
-	fmt.Println("Certificate Store Diagnostics")
-	fmt.Println("==============================")
-	fmt.Println()
+	Header("Certificate Store Diagnostics")
 
 	for _, check := range output.Checks {
-		// Print status icon
-		var statusIcon string
-		switch check.Status {
-		case "pass":
-			statusIcon = "✓"
-		case "warn":
-			statusIcon = "⚠"
-		case "fail":
-			statusIcon = "✗"
-		}
-
+		// Print status icon and check name
+		statusIcon := StatusIcon(check.Status)
 		fmt.Printf("%s %s\n", statusIcon, check.Name)
 
 		// Print issues if verbose or if there are problems
@@ -181,30 +167,29 @@ func printDoctorOutput(output DoctorOutput) {
 			}
 		}
 
-		fmt.Println()
+		EmptyLine()
 	}
 
 	// Print summary
-	fmt.Println("Summary")
-	fmt.Println("-------")
-	fmt.Printf("Total checks: %d\n", output.Summary.Total)
-	fmt.Printf("Passed:       %d\n", output.Summary.Passed)
+	Subheader("Summary")
+	Field("Total checks", fmt.Sprintf("%d", output.Summary.Total))
+	Field("Passed", fmt.Sprintf("%d", output.Summary.Passed))
 	if output.Summary.Warnings > 0 {
-		fmt.Printf("Warnings:     %d\n", output.Summary.Warnings)
+		Field("Warnings", fmt.Sprintf("%d", output.Summary.Warnings))
 	}
 	if output.Summary.Failures > 0 {
-		fmt.Printf("Failures:     %d\n", output.Summary.Failures)
+		Field("Failures", fmt.Sprintf("%d", output.Summary.Failures))
 	}
-	fmt.Println()
+	EmptyLine()
 
 	if output.OverallPass {
 		if output.Summary.Warnings > 0 {
-			fmt.Println("Status: PASS (with warnings)")
+			Info("Status: PASS (with warnings)")
 		} else {
-			fmt.Println("Status: PASS")
+			Info("Status: PASS")
 		}
 	} else {
-		fmt.Println("Status: FAIL")
+		Info("Status: FAIL")
 	}
 }
 

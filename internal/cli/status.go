@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -92,10 +91,8 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 	// Output
 	if statusJSON {
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", "  ")
-		if err := encoder.Encode(status); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: Failed to encode JSON: %v\n", err)
+		if err := JSON(status); err != nil {
+			Error("Failed to encode JSON: %v", err)
 			os.Exit(verifierrors.ExitGeneralError)
 		}
 	} else {
@@ -161,83 +158,63 @@ func gatherStatus(store *certstore.Store) StatusOutput {
 
 // printStatusHuman prints the status in a human-readable format.
 func printStatusHuman(status StatusOutput) {
-	fmt.Println("Certificate Store Status")
-	fmt.Println("========================")
-	fmt.Println()
+	Header("Certificate Store Status")
 
 	// Store location
-	fmt.Printf("Store Location:  %s\n", status.StoreLocation)
-	fmt.Printf("Initialized:     %v\n", status.Initialized)
-	fmt.Println()
+	Field("Store Location", status.StoreLocation)
+	Field("Initialized", fmt.Sprintf("%v", status.Initialized))
+	EmptyLine()
 
 	if !status.Initialized {
-		fmt.Println("Store is not initialized. Run 'verifi init' to initialize.")
+		Warning("Store is not initialized. Run 'verifi init' to initialize.")
 		return
 	}
 
 	// User certificates
-	fmt.Println("User Certificates")
-	fmt.Println("-----------------")
-	fmt.Printf("Count:           %d\n", status.UserCerts.Count)
+	Subheader("User Certificates")
+	Field("Count", fmt.Sprintf("%d", status.UserCerts.Count))
 	if status.UserCerts.Count > 0 {
-		fmt.Println()
+		EmptyLine()
 		for _, cert := range status.UserCerts.Certs {
-			fmt.Printf("  - %s\n", cert.Name)
-			fmt.Printf("    Subject:   %s\n", cert.Subject)
-			fmt.Printf("    Expires:   %s\n", cert.Expires.Format("2006-01-02 15:04:05 MST"))
-			fmt.Printf("    Added:     %s\n", cert.Added.Format("2006-01-02 15:04:05 MST"))
+			fmt.Printf("  • %s\n", cert.Name)
+			FieldIndented("Subject", cert.Subject, 4)
+			FieldIndented("Expires", cert.Expires.Format("2006-01-02 15:04:05 MST"), 4)
+			FieldIndented("Added", cert.Added.Format("2006-01-02 15:04:05 MST"), 4)
 		}
 	}
-	fmt.Println()
+	EmptyLine()
 
 	// Combined bundle
-	fmt.Println("Combined Bundle")
-	fmt.Println("---------------")
-	fmt.Printf("Path:            %s\n", status.CombinedBundle.Path)
-	fmt.Printf("Certificates:    %d\n", status.CombinedBundle.CertCount)
+	Subheader("Combined Bundle")
+	Field("Path", status.CombinedBundle.Path)
+	Field("Certificates", fmt.Sprintf("%d", status.CombinedBundle.CertCount))
 	if len(status.CombinedBundle.Sources) > 0 {
-		fmt.Printf("Sources:         %v\n", status.CombinedBundle.Sources)
+		Field("Sources", fmt.Sprintf("%v", status.CombinedBundle.Sources))
 	}
 	if status.CombinedBundle.SizeBytes > 0 {
-		fmt.Printf("Size:            %s\n", formatBytes(status.CombinedBundle.SizeBytes))
+		Field("Size", FormatBytes(status.CombinedBundle.SizeBytes))
 	}
 	if !status.CombinedBundle.Generated.IsZero() {
-		fmt.Printf("Generated:       %s\n", status.CombinedBundle.Generated.Format("2006-01-02 15:04:05 MST"))
+		Field("Generated", status.CombinedBundle.Generated.Format("2006-01-02 15:04:05 MST"))
 	}
-	fmt.Println()
+	EmptyLine()
 
 	// Mozilla bundle
-	fmt.Println("Mozilla CA Bundle")
-	fmt.Println("-----------------")
-	fmt.Printf("Source:          %s\n", status.MozillaBundle.Source)
-	fmt.Printf("Certificates:    %d\n", status.MozillaBundle.CertCount)
+	Subheader("Mozilla CA Bundle")
+	Field("Source", status.MozillaBundle.Source)
+	Field("Certificates", fmt.Sprintf("%d", status.MozillaBundle.CertCount))
 	if !status.MozillaBundle.Generated.IsZero() {
-		fmt.Printf("Generated:       %s\n", status.MozillaBundle.Generated.Format("2006-01-02 15:04:05 MST"))
+		Field("Generated", status.MozillaBundle.Generated.Format("2006-01-02 15:04:05 MST"))
 	}
-	fmt.Println()
+	EmptyLine()
 
 	// Environment file
-	fmt.Println("Environment File")
-	fmt.Println("----------------")
-	fmt.Printf("Path:            %s\n", status.EnvFile.Path)
-	fmt.Printf("Exists:          %v\n", status.EnvFile.Exists)
+	Subheader("Environment File")
+	Field("Path", status.EnvFile.Path)
+	Field("Exists", fmt.Sprintf("%v", status.EnvFile.Exists))
 	if !status.EnvFile.Exists {
-		fmt.Println()
-		fmt.Println("Warning: env.sh not found. Run 'verifi env' to regenerate it.")
+		EmptyLine()
+		Warning("env.sh not found. Run 'verifi env' to regenerate it.")
 	}
-	fmt.Println()
-}
-
-// formatBytes formats byte sizes in human-readable format (B, KB, MB, etc.).
-func formatBytes(bytes int64) string {
-	const unit = 1024
-	if bytes < unit {
-		return fmt.Sprintf("%d B", bytes)
-	}
-	div, exp := int64(unit), 0
-	for n := bytes / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+	EmptyLine()
 }

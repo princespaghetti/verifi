@@ -75,19 +75,239 @@ verifi operates on a simple principle: maintain a combined certificate bundle co
 
 ## Installation
 
-> Installation instructions will be provided once releases are available.
+### macOS
 
-verifi will be distributed as pre-built binaries for major platforms via GitHub Releases.
+**Homebrew** (coming soon):
+```bash
+brew install princespaghetti/tap/verifi
+```
+
+**Manual installation**:
+```bash
+# For M1/M2 Macs (arm64):
+curl -LO https://github.com/princespaghetti/verifi/releases/latest/download/verifi_*_darwin_arm64.tar.gz
+tar -xzf verifi_*_darwin_arm64.tar.gz
+sudo mv verifi /usr/local/bin/
+sudo chmod +x /usr/local/bin/verifi
+
+# For Intel Macs (amd64):
+curl -LO https://github.com/princespaghetti/verifi/releases/latest/download/verifi_*_darwin_amd64.tar.gz
+tar -xzf verifi_*_darwin_amd64.tar.gz
+sudo mv verifi /usr/local/bin/
+sudo chmod +x /usr/local/bin/verifi
+```
+
+### Linux
+
+```bash
+# For amd64:
+curl -LO https://github.com/princespaghetti/verifi/releases/latest/download/verifi_*_linux_amd64.tar.gz
+tar -xzf verifi_*_linux_amd64.tar.gz
+sudo mv verifi /usr/local/bin/
+sudo chmod +x /usr/local/bin/verifi
+
+# For arm64:
+curl -LO https://github.com/princespaghetti/verifi/releases/latest/download/verifi_*_linux_arm64.tar.gz
+tar -xzf verifi_*_linux_arm64.tar.gz
+sudo mv verifi /usr/local/bin/
+sudo chmod +x /usr/local/bin/verifi
+```
+
+### Verify Installation
+
+```bash
+verifi version
+```
 
 ## Getting Started
 
-The typical workflow with verifi:
+### Quick Start
 
-1. **Initialize**: Set up the certificate store with the embedded Mozilla CA bundle
-2. **Add Certificates**: Import your corporate or proxy certificates
-3. **Configure Shell**: Add the generated environment file to your shell configuration
-4. **Verify**: Test that HTTPS connections work correctly
-5. **Use**: All your development tools now use the configured certificates automatically
+```bash
+# 1. Initialize the certificate store
+verifi init
+
+# 2. Add your corporate certificate
+verifi cert add /path/to/corporate-ca.pem --name corporate
+
+# 3. Configure your shell (add to ~/.zshrc or ~/.bashrc)
+echo 'source ~/.verifi/env.sh' >> ~/.zshrc
+source ~/.zshrc
+
+# 4. Verify everything works
+verifi status
+curl -v https://your-internal-site.corp.com
+npm ping
+```
+
+### Detailed Workflow
+
+#### 1. Initialize the Certificate Store
+
+```bash
+verifi init
+```
+
+This creates `~/.verifi/` with:
+- Mozilla's CA bundle (embedded offline)
+- Directory structure for your certificates
+- Environment configuration file (`env.sh`)
+- Metadata for tracking changes
+
+#### 2. Add Your Certificates
+
+```bash
+# Add from file
+verifi cert add /path/to/cert.pem --name corporate
+
+# Add from URL (if accessible)
+curl https://internal.corp.com/ca.crt | verifi cert add --stdin --name internal
+
+# Add expired certificate (for testing)
+verifi cert add old-cert.pem --name legacy --force
+```
+
+#### 3. Configure Your Shell
+
+Add verifi's environment file to your shell startup:
+
+**For zsh** (macOS default):
+```bash
+echo 'source ~/.verifi/env.sh' >> ~/.zshrc
+source ~/.zshrc
+```
+
+**For bash**:
+```bash
+echo 'source ~/.verifi/env.sh' >> ~/.bashrc
+source ~/.bashrc
+```
+
+#### 4. Verify Configuration
+
+```bash
+# Check verifi status
+verifi status
+
+# List certificates
+verifi cert list
+
+# Test with real tools
+curl -v https://internal.corp.com
+npm config get registry
+git ls-remote https://github.com/user/repo.git
+pip install --index-url https://pypi.internal.corp.com somepackage
+```
+
+### Common Operations
+
+#### Managing Certificates
+
+```bash
+# List all certificates
+verifi cert list
+
+# List only expired certificates
+verifi cert list --expired
+
+# Inspect certificate details
+verifi cert inspect corporate
+
+# Remove a certificate
+verifi cert remove corporate
+
+# Add certificate from clipboard
+pbpaste | verifi cert add --stdin --name clipboard-cert
+```
+
+#### Mozilla CA Bundle Management
+
+```bash
+# Check current Mozilla bundle info
+verifi bundle info
+
+# Update to latest Mozilla bundle (optional)
+verifi bundle update
+
+# Reset to embedded version
+verifi bundle reset
+```
+
+#### Diagnostics & Maintenance
+
+```bash
+# Run comprehensive diagnostics
+verifi doctor
+
+# Show detailed diagnostic info
+verifi doctor --verbose
+
+# Get JSON output for scripting
+verifi status --json
+verifi cert list --json
+
+# Clean up temporary files
+verifi clean
+
+# Remove entire store (with confirmation)
+verifi clean --full
+```
+
+#### Shell Completion
+
+```bash
+# For bash
+verifi completion bash > /usr/local/etc/bash_completion.d/verifi
+
+# For zsh
+verifi completion zsh > "${fpath[1]}/_verifi"
+```
+
+### Integration Examples
+
+#### Python (pip & requests)
+
+```python
+import requests
+
+# Works automatically - verifi configures REQUESTS_CA_BUNDLE
+response = requests.get('https://internal.api.corp.com')
+print(response.status_code)
+```
+
+```bash
+# pip also works automatically
+pip install --index-url https://pypi.internal.corp.com package-name
+```
+
+#### Node.js (npm, yarn)
+
+```bash
+# All npm operations work automatically
+npm install
+npm publish
+npm ping
+
+# yarn works too
+yarn install
+yarn publish
+```
+
+#### Git
+
+```bash
+# Git operations work automatically
+git clone https://internal.gitlab.corp.com/org/repo.git
+git push origin main
+```
+
+#### AWS CLI
+
+```bash
+# AWS CLI respects AWS_CA_BUNDLE
+aws s3 ls
+aws ec2 describe-instances
+```
 
 ## Core Principles
 
@@ -127,7 +347,18 @@ Comprehensive documentation is available in the repository:
 
 ## Project Status
 
-verifi is currently in active development. The architecture and core principles are established, and implementation is underway.
+verifi is production-ready and actively maintained. All core features are implemented and tested:
+
+- ✅ Certificate store initialization and management
+- ✅ User certificate addition, removal, and inspection
+- ✅ Mozilla CA bundle updates and management
+- ✅ Environment configuration generation
+- ✅ Comprehensive diagnostics and status reporting
+- ✅ Maintenance and cleanup operations
+- ✅ Shell completion support (bash/zsh)
+- ✅ Cross-platform releases (macOS/Linux)
+
+See [PLAN.md](PLAN.md) for the complete implementation roadmap.
 
 ## Contributing
 
@@ -137,10 +368,6 @@ Contributions are welcome! Please see CONTRIBUTING.md for:
 - Code structure and patterns
 - Testing requirements
 - Pull request process
-
-## License
-
-> License information to be added.
 
 ## Support
 

@@ -62,7 +62,7 @@ func runClean(cmd *cobra.Command, args []string) error {
 }
 
 func runTempCleanup(basePath string) error {
-	fmt.Println("Cleaning temporary files...")
+	Info("Cleaning temporary files...")
 
 	// Find all temp and lock files
 	tempPatterns := []string{"*.tmp", "*.lock"}
@@ -104,7 +104,8 @@ func runTempCleanup(basePath string) error {
 	}
 
 	if len(foundFiles) == 0 {
-		fmt.Println("\n✓ No temporary files found")
+		EmptyLine()
+		Success("No temporary files found")
 		return nil
 	}
 
@@ -112,62 +113,69 @@ func runTempCleanup(basePath string) error {
 	removedCount := 0
 	for _, file := range foundFiles {
 		if err := os.Remove(file); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Failed to remove %s: %v\n", file, err)
+			Warning("Failed to remove %s: %v", file, err)
 		} else {
 			removedCount++
 			fmt.Printf("  Removed: %s\n", filepath.Base(file))
 		}
 	}
 
-	fmt.Printf("\n✓ Removed %d temporary file(s)\n", removedCount)
+	EmptyLine()
+	Success("Removed %d temporary file(s)", removedCount)
 	return nil
 }
 
 func runFullCleanup(basePath string) error {
 	// Check if store exists
 	if _, err := os.Stat(basePath); os.IsNotExist(err) {
-		fmt.Println("Certificate store does not exist")
+		Info("Certificate store does not exist")
 		return nil
 	}
 
 	// Require confirmation unless --force
 	if !cleanForce {
-		fmt.Println("WARNING: This will permanently delete the entire certificate store!")
-		fmt.Printf("Location: %s\n", basePath)
-		fmt.Println()
-		fmt.Println("This will remove:")
-		fmt.Println("  - All user certificates")
-		fmt.Println("  - Mozilla CA bundle")
-		fmt.Println("  - Combined bundle")
-		fmt.Println("  - Metadata")
-		fmt.Println("  - Environment file (env.sh)")
-		fmt.Println()
+		Warning("This will permanently delete the entire certificate store!")
+		Field("Location", basePath)
+		EmptyLine()
+		Info("This will remove:")
+		PrintList([]string{
+			"All user certificates",
+			"Mozilla CA bundle",
+			"Combined bundle",
+			"Metadata",
+			"Environment file (env.sh)",
+		})
+		EmptyLine()
 		fmt.Print("Are you sure you want to continue? Type 'yes' to confirm: ")
 
 		reader := bufio.NewReader(os.Stdin)
 		response, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
+			Error("Error reading input: %v", err)
 			os.Exit(verifierrors.ExitGeneralError)
 		}
 
 		response = strings.TrimSpace(strings.ToLower(response))
 		if response != "yes" {
-			fmt.Println("\nAborted. Certificate store was not removed.")
+			EmptyLine()
+			Info("Aborted. Certificate store was not removed.")
 			return nil
 		}
 	}
 
 	// Remove the entire directory
-	fmt.Printf("\nRemoving certificate store at %s...\n", basePath)
+	EmptyLine()
+	Info("Removing certificate store at %s...", basePath)
 
 	if err := os.RemoveAll(basePath); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Failed to remove store: %v\n", err)
+		Error("Failed to remove store: %v", err)
 		os.Exit(verifierrors.ExitGeneralError)
 	}
 
-	fmt.Println("\n✓ Certificate store removed successfully")
-	fmt.Println("\nTo recreate the store, run: verifi init")
+	EmptyLine()
+	Success("Certificate store removed successfully")
+	EmptyLine()
+	Info("To recreate the store, run: verifi init")
 
 	return nil
 }

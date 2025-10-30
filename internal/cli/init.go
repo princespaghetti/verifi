@@ -54,7 +54,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	// Check if already initialized
 	if store.IsInitialized() && !initForce {
-		fmt.Fprintf(os.Stderr, "Error: Certificate store already initialized at %s\n", store.BasePath())
+		Error("Certificate store already initialized at %s", store.BasePath())
 		fmt.Fprintf(os.Stderr, "Use --force to reinitialize (WARNING: this will reset your configuration)\n")
 		os.Exit(verifierrors.ExitConfigError)
 	}
@@ -63,22 +63,22 @@ func runInit(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	fmt.Printf("Initializing certificate store at %s...\n", store.BasePath())
+	Info("Initializing certificate store at %s...", store.BasePath())
 
 	if err := store.Init(ctx, initForce); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Failed to initialize store: %v\n", err)
+		Error("Failed to initialize store: %v", err)
 		os.Exit(verifierrors.ExitGeneralError)
 	}
 
 	// Generate env.sh file
 	envPath := shell.EnvFilePath(store.BasePath())
 	if err := shell.GenerateEnvFile(store.BasePath(), store.CombinedBundlePath()); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Failed to generate env.sh: %v\n", err)
+		Warning("Failed to generate env.sh: %v", err)
 		// Don't exit - store is still usable without env.sh
 	}
 
-	fmt.Printf("✓ Certificate store initialized successfully\n")
-	fmt.Printf("✓ Mozilla CA bundle extracted (%s)\n", store.CombinedBundlePath())
+	Success("Certificate store initialized successfully")
+	Success("Mozilla CA bundle extracted (%s)", store.CombinedBundlePath())
 
 	// Print setup instructions
 	shell.PrintSetupInstructions(envPath)

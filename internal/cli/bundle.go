@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -163,10 +162,8 @@ func runBundleInfo(cmd *cobra.Command, args []string) error {
 
 	// Output
 	if bundleJSON {
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", "  ")
-		if err := encoder.Encode(output); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: Failed to encode JSON: %v\n", err)
+		if err := JSON(output); err != nil {
+			Error("Failed to encode JSON: %v", err)
 			os.Exit(verifierrors.ExitGeneralError)
 		}
 	} else {
@@ -177,22 +174,20 @@ func runBundleInfo(cmd *cobra.Command, args []string) error {
 }
 
 func printBundleInfoHuman(info BundleInfoOutput) {
-	fmt.Println("Mozilla CA Bundle Information")
-	fmt.Println("==============================")
-	fmt.Println()
-	fmt.Printf("Source:          %s\n", info.Source)
+	Header("Mozilla CA Bundle Information")
+	Field("Source", info.Source)
 	if info.Version != "" {
-		fmt.Printf("Version:         %s\n", info.Version)
+		Field("Version", info.Version)
 	}
-	fmt.Printf("Certificates:    %d\n", info.CertCount)
+	Field("Certificates", fmt.Sprintf("%d", info.CertCount))
 	if info.SizeBytes > 0 {
-		fmt.Printf("Size:            %s\n", formatBytes(info.SizeBytes))
+		Field("Size", FormatBytes(info.SizeBytes))
 	}
-	fmt.Printf("Generated:       %s\n", info.Generated.Format("2006-01-02 15:04:05 MST"))
-	fmt.Printf("File Path:       %s\n", info.FilePath)
-	fmt.Println()
-	fmt.Printf("SHA256:          %s\n", info.SHA256)
-	fmt.Println()
+	Field("Generated", info.Generated.Format("2006-01-02 15:04:05 MST"))
+	Field("File Path", info.FilePath)
+	EmptyLine()
+	Field("SHA256", info.SHA256)
+	EmptyLine()
 }
 
 func runBundleUpdate(cmd *cobra.Command, args []string) error {
@@ -219,7 +214,7 @@ func runBundleUpdate(cmd *cobra.Command, args []string) error {
 
 	currentCertCount := metadata.MozillaBundle.CertCount
 
-	fmt.Printf("Downloading Mozilla CA bundle from %s...\n", bundleURL)
+	Info("Downloading Mozilla CA bundle from %s...", bundleURL)
 
 	// Download bundle with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -228,20 +223,20 @@ func runBundleUpdate(cmd *cobra.Command, args []string) error {
 	f := fetcher.NewFetcher(nil)
 	bundleData, err := f.FetchMozillaBundle(ctx, bundleURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Failed to download bundle: %v\n", err)
+		Error("Failed to download bundle: %v", err)
 		os.Exit(verifierrors.ExitNetworkError)
 	}
 
 	// Verify bundle
 	verifyResult, err := fetcher.VerifyBundle(bundleData, currentCertCount)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Bundle verification failed: %v\n", err)
+		Error("Bundle verification failed: %v", err)
 		os.Exit(verifierrors.ExitCertError)
 	}
 
 	// Show warning if there's degradation
 	if verifyResult.Warning != "" {
-		fmt.Fprintf(os.Stderr, "Warning: %s\n", verifyResult.Warning)
+		Warning("%s", verifyResult.Warning)
 		fmt.Fprintf(os.Stderr, "Continue anyway? This could indicate a problem with the download.\n")
 		fmt.Fprintf(os.Stderr, "Press Ctrl+C to abort, or Enter to continue: ")
 		fmt.Scanln() // Wait for user confirmation
@@ -284,32 +279,32 @@ func runBundleUpdate(cmd *cobra.Command, args []string) error {
 	})
 
 	if updateErr != nil {
-		fmt.Fprintf(os.Stderr, "Error: Failed to update metadata and rebuild bundle: %v\n", updateErr)
+		Error("Failed to update metadata and rebuild bundle: %v", updateErr)
 		fmt.Fprintf(os.Stderr, "The Mozilla bundle was updated but the combined bundle may be out of sync.\n")
-		fmt.Fprintf(os.Stderr, "Run 'verifi doctor' (in Phase 7) to repair the store.\n")
+		fmt.Fprintf(os.Stderr, "Run 'verifi doctor' to repair the store.\n")
 		os.Exit(verifierrors.ExitGeneralError)
 	}
 
 	// Show success message
-	fmt.Printf("\n✓ Bundle updated successfully\n")
-	fmt.Printf("  Downloaded from: %s\n", bundleURL)
+	EmptyLine()
+	Success("Bundle updated successfully")
+	FieldIndented("Downloaded from", bundleURL, 2)
 	if verifyResult.HasDateInHeader {
-		fmt.Printf("  Mozilla date:    %s\n", verifyResult.MozillaDate.Format("January 2, 2006"))
+		FieldIndented("Mozilla date", verifyResult.MozillaDate.Format("January 2, 2006"), 2)
 	}
-	fmt.Printf("  Certificates:    %d", verifyResult.CertCount)
+	certInfo := fmt.Sprintf("%d", verifyResult.CertCount)
 	if currentCertCount > 0 {
 		diff := verifyResult.CertCount - currentCertCount
 		if diff > 0 {
-			fmt.Printf(" (+%d from previous)\n", diff)
+			certInfo = fmt.Sprintf("%d (+%d from previous)", verifyResult.CertCount, diff)
 		} else if diff < 0 {
-			fmt.Printf(" (%d from previous)\n", diff)
+			certInfo = fmt.Sprintf("%d (%d from previous)", verifyResult.CertCount, diff)
 		} else {
-			fmt.Printf(" (no change)\n")
+			certInfo = fmt.Sprintf("%d (no change)", verifyResult.CertCount)
 		}
-	} else {
-		fmt.Println()
 	}
-	fmt.Println()
+	FieldIndented("Certificates", certInfo, 2)
+	EmptyLine()
 
 	return nil
 }
@@ -339,10 +334,10 @@ func runBundleReset(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	fmt.Println("Resetting Mozilla CA bundle to embedded version...")
+	Info("Resetting Mozilla CA bundle to embedded version...")
 
 	if err := store.ResetMozillaBundle(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Failed to reset bundle: %v\n", err)
+		Error("Failed to reset bundle: %v", err)
 		os.Exit(verifierrors.ExitGeneralError)
 	}
 
@@ -350,17 +345,19 @@ func runBundleReset(cmd *cobra.Command, args []string) error {
 	metadata, err := store.GetMetadata()
 	if err != nil {
 		// Reset succeeded but can't read metadata - still success
-		fmt.Println("\n✓ Mozilla CA bundle reset to embedded version")
+		EmptyLine()
+		Success("Mozilla CA bundle reset to embedded version")
 		return nil
 	}
 
 	// Show success message with details
-	fmt.Println("\n✓ Mozilla CA bundle reset to embedded version")
-	fmt.Printf("  Source:       embedded\n")
-	fmt.Printf("  Certificates: %d\n", metadata.MozillaBundle.CertCount)
-	fmt.Printf("  Updated:      %s\n", metadata.MozillaBundle.Generated.Format("2006-01-02 15:04:05 MST"))
-	fmt.Println()
-	fmt.Printf("Combined bundle rebuilt: %s\n", store.CombinedBundlePath())
+	EmptyLine()
+	Success("Mozilla CA bundle reset to embedded version")
+	FieldIndented("Source", "embedded", 2)
+	FieldIndented("Certificates", fmt.Sprintf("%d", metadata.MozillaBundle.CertCount), 2)
+	FieldIndented("Updated", metadata.MozillaBundle.Generated.Format("2006-01-02 15:04:05 MST"), 2)
+	EmptyLine()
+	Info("Combined bundle rebuilt: %s", store.CombinedBundlePath())
 
 	return nil
 }
