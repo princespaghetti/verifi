@@ -59,6 +59,36 @@ Examples:
 	RunE: runCertList,
 }
 
+// certRemoveCmd represents the cert remove command.
+var certRemoveCmd = &cobra.Command{
+	Use:   "remove <name>",
+	Short: "Remove a certificate from the store",
+	Long: `Remove a user certificate from the certificate store by name.
+
+The certificate file will be deleted and the combined bundle will be rebuilt.
+
+Examples:
+  verifi cert remove corporate
+  verifi cert remove proxy`,
+	Args: cobra.ExactArgs(1),
+	RunE: runCertRemove,
+}
+
+// certInspectCmd represents the cert inspect command.
+var certInspectCmd = &cobra.Command{
+	Use:   "inspect <name>",
+	Short: "Show detailed information about a certificate",
+	Long: `Display detailed information about a specific user certificate.
+
+Shows the subject, issuer, expiration date, fingerprint, and other details.
+
+Examples:
+  verifi cert inspect corporate
+  verifi cert inspect proxy --json`,
+	Args: cobra.ExactArgs(1),
+	RunE: runCertInspect,
+}
+
 func init() {
 	// Add cert command to root
 	rootCmd.AddCommand(certCmd)
@@ -66,6 +96,8 @@ func init() {
 	// Add subcommands
 	certCmd.AddCommand(certAddCmd)
 	certCmd.AddCommand(certListCmd)
+	certCmd.AddCommand(certRemoveCmd)
+	certCmd.AddCommand(certInspectCmd)
 
 	// cert add flags
 	certAddCmd.Flags().StringVar(&certName, "name", "", "Certificate name (required)")
@@ -75,6 +107,9 @@ func init() {
 	// cert list flags
 	certListCmd.Flags().BoolVar(&certJSON, "json", false, "Output in JSON format")
 	certListCmd.Flags().BoolVar(&certExpired, "expired", false, "Show only expired certificates")
+
+	// cert inspect flags
+	certInspectCmd.Flags().BoolVar(&certJSON, "json", false, "Output in JSON format")
 }
 
 func runCertAdd(cmd *cobra.Command, args []string) error {
@@ -232,4 +267,109 @@ func repeatString(s string, n int) string {
 		result += s
 	}
 	return result
+}
+
+func runCertRemove(cmd *cobra.Command, args []string) error {
+	name := args[0]
+
+	// Create store
+	store, err := certstore.NewStore("")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Failed to create store: %v\n", err)
+		os.Exit(verifierrors.ExitConfigError)
+	}
+
+	// Check if initialized
+	if !store.IsInitialized() {
+		fmt.Fprintf(os.Stderr, "Error: Certificate store not initialized\n")
+		fmt.Fprintf(os.Stderr, "Run 'verifi init' first to initialize the store\n")
+		os.Exit(verifierrors.ExitConfigError)
+	}
+
+	// Remove certificate with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	fmt.Printf("Removing certificate '%s'...\n", name)
+
+	if err := store.RemoveCert(ctx, name); err != nil {
+		// Check for specific error types
+		if verifierrors.IsError(err, verifierrors.ErrCertNotFound) {
+			fmt.Fprintf(os.Stderr, "Error: Certificate '%s' not found\n", name)
+			fmt.Fprintf(os.Stderr, "Use 'verifi cert list' to see available certificates\n")
+			os.Exit(verifierrors.ExitCertError)
+		}
+
+		fmt.Fprintf(os.Stderr, "Error: Failed to remove certificate: %v\n", err)
+		os.Exit(verifierrors.ExitGeneralError)
+	}
+
+	fmt.Printf("✓ Certificate '%s' removed successfully\n", name)
+	fmt.Printf("\nCombined bundle rebuilt: %s\n", store.CombinedBundlePath())
+
+	return nil
+}
+
+func runCertInspect(cmd *cobra.Command, args []string) error {
+	name := args[0]
+
+	// Create store
+	store, err := certstore.NewStore("")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Failed to create store: %v\n", err)
+		os.Exit(verifierrors.ExitConfigError)
+	}
+
+	// Check if initialized
+	if !store.IsInitialized() {
+		fmt.Fprintf(os.Stderr, "Error: Certificate store not initialized\n")
+		fmt.Fprintf(os.Stderr, "Run 'verifi init' first to initialize the store\n")
+		os.Exit(verifierrors.ExitConfigError)
+	}
+
+	// Get certificate info
+	info, err := store.GetCertInfo(name)
+	if err != nil {
+		// Check for specific error types
+		if verifierrors.IsError(err, verifierrors.ErrCertNotFound) {
+			fmt.Fprintf(os.Stderr, "Error: Certificate '%s' not found\n", name)
+			fmt.Fprintf(os.Stderr, "Use 'verifi cert list' to see available certificates\n")
+			os.Exit(verifierrors.ExitCertError)
+		}
+
+		fmt.Fprintf(os.Stderr, "Error: Failed to get certificate info: %v\n", err)
+		os.Exit(verifierrors.ExitGeneralError)
+	}
+
+	// JSON output
+	if certJSON {
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(info); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: Failed to encode JSON: %v\n", err)
+			os.Exit(verifierrors.ExitGeneralError)
+		}
+		return nil
+	}
+
+	// Human-readable output
+	fmt.Printf("Certificate: %s\n", info.Name)
+	fmt.Printf("%s\n\n", repeatString("=", 40))
+
+	fmt.Printf("Subject:     %s\n", info.Subject)
+	fmt.Printf("Fingerprint: %s\n", info.Fingerprint)
+	fmt.Printf("Expires:     %s\n", info.Expires.Format("2006-01-02 15:04:05 MST"))
+	fmt.Printf("Added:       %s\n", info.Added.Format("2006-01-02 15:04:05 MST"))
+	fmt.Printf("Path:        %s\n", info.Path)
+
+	// Check if expired
+	now := time.Now()
+	if now.After(info.Expires) {
+		fmt.Printf("\nStatus:      EXPIRED\n")
+	} else {
+		daysUntilExpiry := int(time.Until(info.Expires).Hours() / 24)
+		fmt.Printf("\nStatus:      Valid (%d days until expiry)\n", daysUntilExpiry)
+	}
+
+	return nil
 }

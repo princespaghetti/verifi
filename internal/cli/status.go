@@ -52,7 +52,7 @@ type StatusOutput struct {
 
 // UserCertsStatus represents user certificate information.
 type UserCertsStatus struct {
-	Count int                       `json:"count"`
+	Count int                      `json:"count"`
 	Certs []certstore.UserCertInfo `json:"certs,omitempty"`
 }
 

@@ -78,10 +78,30 @@ Examples:
 	RunE: runBundleUpdate,
 }
 
+// bundleResetCmd represents the bundle reset command.
+var bundleResetCmd = &cobra.Command{
+	Use:   "reset",
+	Short: "Reset Mozilla CA bundle to embedded version",
+	Long: `Reset the Mozilla CA bundle to the original embedded version.
+
+This is useful if:
+  - A bundle update failed or resulted in a corrupted file
+  - You want to revert to the known-good embedded bundle
+  - You're troubleshooting certificate issues
+
+The embedded bundle is the version included in the verifi binary at build time.
+The combined bundle will be rebuilt after the reset.
+
+Examples:
+  verifi bundle reset`,
+	RunE: runBundleReset,
+}
+
 func init() {
 	rootCmd.AddCommand(bundleCmd)
 	bundleCmd.AddCommand(bundleInfoCmd)
 	bundleCmd.AddCommand(bundleUpdateCmd)
+	bundleCmd.AddCommand(bundleResetCmd)
 
 	// Flags for info command
 	bundleInfoCmd.Flags().BoolVar(&bundleJSON, "json", false, "Output in JSON format")
@@ -92,13 +112,13 @@ func init() {
 
 // BundleInfoOutput represents the output of the bundle info command.
 type BundleInfoOutput struct {
-	Source      string    `json:"source"`
-	Version     string    `json:"version,omitempty"`
-	CertCount   int       `json:"cert_count"`
-	SHA256      string    `json:"sha256"`
-	Generated   time.Time `json:"generated"`
-	SizeBytes   int64     `json:"size_bytes,omitempty"`
-	FilePath    string    `json:"file_path"`
+	Source    string    `json:"source"`
+	Version   string    `json:"version,omitempty"`
+	CertCount int       `json:"cert_count"`
+	SHA256    string    `json:"sha256"`
+	Generated time.Time `json:"generated"`
+	SizeBytes int64     `json:"size_bytes,omitempty"`
+	FilePath  string    `json:"file_path"`
 }
 
 func runBundleInfo(cmd *cobra.Command, args []string) error {
@@ -298,4 +318,49 @@ func runBundleUpdate(cmd *cobra.Command, args []string) error {
 func computeSHA256(data []byte) string {
 	hash := fetcher.ComputeSHA256(data)
 	return hash
+}
+
+func runBundleReset(cmd *cobra.Command, args []string) error {
+	// Create store
+	store, err := certstore.NewStore("")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Failed to create store: %v\n", err)
+		os.Exit(verifierrors.ExitConfigError)
+	}
+
+	// Check if initialized
+	if !store.IsInitialized() {
+		fmt.Fprintf(os.Stderr, "Error: Certificate store not initialized\n")
+		fmt.Fprintf(os.Stderr, "Run 'verifi init' first to initialize the store\n")
+		os.Exit(verifierrors.ExitConfigError)
+	}
+
+	// Reset bundle with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	fmt.Println("Resetting Mozilla CA bundle to embedded version...")
+
+	if err := store.ResetMozillaBundle(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Failed to reset bundle: %v\n", err)
+		os.Exit(verifierrors.ExitGeneralError)
+	}
+
+	// Get updated metadata to show info
+	metadata, err := store.GetMetadata()
+	if err != nil {
+		// Reset succeeded but can't read metadata - still success
+		fmt.Println("\n✓ Mozilla CA bundle reset to embedded version")
+		return nil
+	}
+
+	// Show success message with details
+	fmt.Println("\n✓ Mozilla CA bundle reset to embedded version")
+	fmt.Printf("  Source:       embedded\n")
+	fmt.Printf("  Certificates: %d\n", metadata.MozillaBundle.CertCount)
+	fmt.Printf("  Updated:      %s\n", metadata.MozillaBundle.Generated.Format("2006-01-02 15:04:05 MST"))
+	fmt.Println()
+	fmt.Printf("Combined bundle rebuilt: %s\n", store.CombinedBundlePath())
+
+	return nil
 }

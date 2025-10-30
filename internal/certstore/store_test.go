@@ -453,3 +453,296 @@ func TestStore_RebuildBundle_WithUserCerts(t *testing.T) {
 		t.Errorf("Combined bundle sources should include 'user', got: %v", metadata.CombinedBundle.Sources)
 	}
 }
+
+func TestStore_GetCertInfo_Success(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	store, err := NewStore(tmpDir)
+	if err != nil {
+		t.Fatalf("NewStore() failed: %v", err)
+	}
+
+	// Initialize
+	ctx := context.Background()
+	if err := store.Init(ctx, false); err != nil {
+		t.Fatalf("Init() failed: %v", err)
+	}
+
+	// Add a certificate
+	certPEM := generateTestCert(t, "Test CA", time.Now().Add(-24*time.Hour), time.Now().Add(365*24*time.Hour))
+	certPath := filepath.Join(tmpDir, "test-cert.pem")
+	if err := os.WriteFile(certPath, certPEM, 0644); err != nil {
+		t.Fatalf("Failed to write test cert: %v", err)
+	}
+
+	if err := store.AddCert(ctx, certPath, "mytest", false); err != nil {
+		t.Fatalf("AddCert() failed: %v", err)
+	}
+
+	// Get cert info
+	info, err := store.GetCertInfo("mytest")
+	if err != nil {
+		t.Fatalf("GetCertInfo() failed: %v", err)
+	}
+
+	if info.Name != "mytest" {
+		t.Errorf("Name = %q, want %q", info.Name, "mytest")
+	}
+
+	if info.Subject != "CN=Test CA" {
+		t.Errorf("Subject = %q, want %q", info.Subject, "CN=Test CA")
+	}
+
+	if info.Path != "user/mytest.pem" {
+		t.Errorf("Path = %q, want %q", info.Path, "user/mytest.pem")
+	}
+}
+
+func TestStore_GetCertInfo_NotFound(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	store, err := NewStore(tmpDir)
+	if err != nil {
+		t.Fatalf("NewStore() failed: %v", err)
+	}
+
+	// Initialize
+	ctx := context.Background()
+	if err := store.Init(ctx, false); err != nil {
+		t.Fatalf("Init() failed: %v", err)
+	}
+
+	// Try to get non-existent cert
+	_, err = store.GetCertInfo("nonexistent")
+	if err == nil {
+		t.Error("GetCertInfo() should fail for non-existent cert")
+	}
+
+	if !verifierrors.IsError(err, verifierrors.ErrCertNotFound) {
+		t.Errorf("Expected ErrCertNotFound, got: %v", err)
+	}
+}
+
+func TestStore_GetCertInfo_NotInitialized(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	store, err := NewStore(tmpDir)
+	if err != nil {
+		t.Fatalf("NewStore() failed: %v", err)
+	}
+
+	// Try to get cert info without initializing
+	_, err = store.GetCertInfo("test")
+	if err == nil {
+		t.Error("GetCertInfo() should fail when store is not initialized")
+	}
+
+	if !verifierrors.IsError(err, verifierrors.ErrStoreNotInit) {
+		t.Errorf("Expected ErrStoreNotInit, got: %v", err)
+	}
+}
+
+func TestStore_RemoveCert_Success(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	store, err := NewStore(tmpDir)
+	if err != nil {
+		t.Fatalf("NewStore() failed: %v", err)
+	}
+
+	// Initialize
+	ctx := context.Background()
+	if err := store.Init(ctx, false); err != nil {
+		t.Fatalf("Init() failed: %v", err)
+	}
+
+	// Add a certificate
+	certPEM := generateTestCert(t, "Test CA", time.Now().Add(-24*time.Hour), time.Now().Add(365*24*time.Hour))
+	certPath := filepath.Join(tmpDir, "test-cert.pem")
+	if err := os.WriteFile(certPath, certPEM, 0644); err != nil {
+		t.Fatalf("Failed to write test cert: %v", err)
+	}
+
+	if err := store.AddCert(ctx, certPath, "mytest", false); err != nil {
+		t.Fatalf("AddCert() failed: %v", err)
+	}
+
+	// Verify cert exists in metadata
+	certs, err := store.ListCerts()
+	if err != nil {
+		t.Fatalf("ListCerts() failed: %v", err)
+	}
+	if len(certs) != 1 {
+		t.Fatalf("Expected 1 cert before removal, got %d", len(certs))
+	}
+
+	// Remove the certificate
+	if err := store.RemoveCert(ctx, "mytest"); err != nil {
+		t.Fatalf("RemoveCert() failed: %v", err)
+	}
+
+	// Verify cert is removed from metadata
+	certs, err = store.ListCerts()
+	if err != nil {
+		t.Fatalf("ListCerts() failed: %v", err)
+	}
+	if len(certs) != 0 {
+		t.Errorf("Expected 0 certs after removal, got %d", len(certs))
+	}
+
+	// Verify cert file is removed
+	userCertPath := filepath.Join(tmpDir, "certs", "user", "mytest.pem")
+	if _, err := os.Stat(userCertPath); !os.IsNotExist(err) {
+		t.Error("Certificate file should be removed")
+	}
+
+	// Verify bundle was rebuilt (no user certs in sources)
+	metadata, err := store.readMetadata()
+	if err != nil {
+		t.Fatalf("readMetadata() failed: %v", err)
+	}
+
+	for _, src := range metadata.CombinedBundle.Sources {
+		if src == "user" {
+			t.Error("Combined bundle should not have 'user' source after removing all certs")
+		}
+	}
+}
+
+func TestStore_RemoveCert_NotFound(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	store, err := NewStore(tmpDir)
+	if err != nil {
+		t.Fatalf("NewStore() failed: %v", err)
+	}
+
+	// Initialize
+	ctx := context.Background()
+	if err := store.Init(ctx, false); err != nil {
+		t.Fatalf("Init() failed: %v", err)
+	}
+
+	// Try to remove non-existent cert
+	err = store.RemoveCert(ctx, "nonexistent")
+	if err == nil {
+		t.Error("RemoveCert() should fail for non-existent cert")
+	}
+
+	if !verifierrors.IsError(err, verifierrors.ErrCertNotFound) {
+		t.Errorf("Expected ErrCertNotFound, got: %v", err)
+	}
+}
+
+func TestStore_RemoveCert_NotInitialized(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	store, err := NewStore(tmpDir)
+	if err != nil {
+		t.Fatalf("NewStore() failed: %v", err)
+	}
+
+	// Try to remove cert without initializing
+	err = store.RemoveCert(context.Background(), "test")
+	if err == nil {
+		t.Error("RemoveCert() should fail when store is not initialized")
+	}
+
+	if !verifierrors.IsError(err, verifierrors.ErrStoreNotInit) {
+		t.Errorf("Expected ErrStoreNotInit, got: %v", err)
+	}
+}
+
+func TestStore_ResetMozillaBundle_Success(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	store, err := NewStore(tmpDir)
+	if err != nil {
+		t.Fatalf("NewStore() failed: %v", err)
+	}
+
+	// Initialize
+	ctx := context.Background()
+	if err := store.Init(ctx, false); err != nil {
+		t.Fatalf("Init() failed: %v", err)
+	}
+
+	// Read initial metadata
+	metadataBefore, err := store.readMetadata()
+	if err != nil {
+		t.Fatalf("readMetadata() failed: %v", err)
+	}
+
+	initialSHA := metadataBefore.MozillaBundle.SHA256
+	initialSource := metadataBefore.MozillaBundle.Source
+
+	if initialSource != "embedded" {
+		t.Fatalf("Initial source should be 'embedded', got %q", initialSource)
+	}
+
+	// Modify the Mozilla bundle (simulate an update)
+	mozillaPath := filepath.Join(tmpDir, "certs", "bundles", "mozilla-ca-bundle.pem")
+	if err := os.WriteFile(mozillaPath, []byte("modified content"), 0644); err != nil {
+		t.Fatalf("Failed to modify mozilla bundle: %v", err)
+	}
+
+	// Reset to embedded
+	if err := store.ResetMozillaBundle(ctx); err != nil {
+		t.Fatalf("ResetMozillaBundle() failed: %v", err)
+	}
+
+	// Read metadata after reset
+	metadataAfter, err := store.readMetadata()
+	if err != nil {
+		t.Fatalf("readMetadata() failed: %v", err)
+	}
+
+	// Verify source is still embedded
+	if metadataAfter.MozillaBundle.Source != "embedded" {
+		t.Errorf("Source should be 'embedded' after reset, got %q", metadataAfter.MozillaBundle.Source)
+	}
+
+	// Verify SHA256 matches original (reset to embedded bundle)
+	if metadataAfter.MozillaBundle.SHA256 != initialSHA {
+		t.Errorf("SHA256 should match initial embedded bundle after reset")
+	}
+
+	// Verify version is empty for embedded bundle
+	if metadataAfter.MozillaBundle.Version != "" {
+		t.Errorf("Version should be empty for embedded bundle, got %q", metadataAfter.MozillaBundle.Version)
+	}
+
+	// Verify Mozilla bundle file was actually reset
+	mozillaData, err := os.ReadFile(mozillaPath)
+	if err != nil {
+		t.Fatalf("Failed to read mozilla bundle: %v", err)
+	}
+
+	if string(mozillaData) == "modified content" {
+		t.Error("Mozilla bundle file should have been reset, still contains modified content")
+	}
+
+	// Verify combined bundle was rebuilt
+	if metadataAfter.CombinedBundle.SHA256 == "" {
+		t.Error("Combined bundle SHA256 should be set after reset")
+	}
+}
+
+func TestStore_ResetMozillaBundle_NotInitialized(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	store, err := NewStore(tmpDir)
+	if err != nil {
+		t.Fatalf("NewStore() failed: %v", err)
+	}
+
+	// Try to reset without initializing
+	err = store.ResetMozillaBundle(context.Background())
+	if err == nil {
+		t.Error("ResetMozillaBundle() should fail when store is not initialized")
+	}
+
+	if !verifierrors.IsError(err, verifierrors.ErrStoreNotInit) {
+		t.Errorf("Expected ErrStoreNotInit, got: %v", err)
+	}
+}

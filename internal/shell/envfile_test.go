@@ -168,9 +168,9 @@ func TestGenerateEnvFile_InvalidDirectory(t *testing.T) {
 
 func TestEnvFilePath(t *testing.T) {
 	tests := []struct {
-		name        string
-		verifiHome  string
-		expected    string
+		name       string
+		verifiHome string
+		expected   string
 	}{
 		{
 			name:       "unix path",

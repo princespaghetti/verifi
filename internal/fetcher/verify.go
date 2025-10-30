@@ -21,10 +21,10 @@ const (
 
 // BundleVerificationResult contains the results of bundle verification.
 type BundleVerificationResult struct {
-	CertCount    int
-	MozillaDate  time.Time
-	IsValid      bool
-	Warning      string
+	CertCount       int
+	MozillaDate     time.Time
+	IsValid         bool
+	Warning         string
 	HasDateInHeader bool
 }
 

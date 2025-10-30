@@ -159,10 +159,10 @@ func TestVerifyBundle_Degradation(t *testing.T) {
 
 func TestParseMozillaDate(t *testing.T) {
 	tests := []struct {
-		name        string
-		bundleData  string
-		expectFound bool
-		expectedDay int
+		name         string
+		bundleData   string
+		expectFound  bool
+		expectedDay  int
 		expectedYear int
 	}{
 		{

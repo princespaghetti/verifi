@@ -357,6 +357,166 @@ func (s *Store) GetMetadata() (*Metadata, error) {
 	return s.readMetadata()
 }
 
+// GetCertInfo retrieves detailed information about a specific user certificate by name.
+// Returns ErrCertNotFound if the certificate doesn't exist.
+func (s *Store) GetCertInfo(name string) (*UserCertInfo, error) {
+	if !s.IsInitialized() {
+		return nil, &verifierrors.VerifiError{
+			Op:  "get certificate info",
+			Err: verifierrors.ErrStoreNotInit,
+		}
+	}
+
+	metadata, err := s.readMetadata()
+	if err != nil {
+		return nil, err
+	}
+
+	// Find the certificate by name
+	for _, cert := range metadata.UserCerts {
+		if cert.Name == name {
+			return &cert, nil
+		}
+	}
+
+	return nil, &verifierrors.VerifiError{
+		Op:   "get certificate info",
+		Path: name,
+		Err:  verifierrors.ErrCertNotFound,
+	}
+}
+
+// RemoveCert removes a user certificate by name.
+// The certificate file is deleted and the combined bundle is rebuilt.
+func (s *Store) RemoveCert(ctx context.Context, name string) error {
+	if !s.IsInitialized() {
+		return &verifierrors.VerifiError{
+			Op:  "remove certificate",
+			Err: verifierrors.ErrStoreNotInit,
+		}
+	}
+
+	// Check context
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Update metadata with file locking
+	updateErr := s.UpdateMetadata(ctx, func(md *Metadata) error {
+		// Find and remove the certificate from metadata
+		found := false
+		newCerts := make([]UserCertInfo, 0, len(md.UserCerts))
+		for _, cert := range md.UserCerts {
+			if cert.Name == name {
+				found = true
+				continue
+			}
+			newCerts = append(newCerts, cert)
+		}
+
+		if !found {
+			return &verifierrors.VerifiError{
+				Op:   "remove certificate",
+				Path: name,
+				Err:  verifierrors.ErrCertNotFound,
+			}
+		}
+
+		md.UserCerts = newCerts
+		return nil
+	})
+
+	if updateErr != nil {
+		return updateErr
+	}
+
+	// Remove the physical certificate file
+	certPath := s.userCertPath(name)
+	if err := s.fs.Remove(certPath); err != nil {
+		// File may not exist, which is okay - we've already removed it from metadata
+		// Log but don't fail
+	}
+
+	// Rebuild the combined bundle
+	rebuildErr := s.UpdateMetadata(ctx, func(md *Metadata) error {
+		return s.rebuildBundle(ctx, md)
+	})
+
+	if rebuildErr != nil {
+		return &verifierrors.VerifiError{
+			Op:  "rebuild bundle after removing certificate",
+			Err: rebuildErr,
+		}
+	}
+
+	return nil
+}
+
+// ResetMozillaBundle resets the Mozilla CA bundle to the embedded version.
+// The combined bundle is rebuilt after the reset.
+func (s *Store) ResetMozillaBundle(ctx context.Context) error {
+	if !s.IsInitialized() {
+		return &verifierrors.VerifiError{
+			Op:  "reset mozilla bundle",
+			Err: verifierrors.ErrStoreNotInit,
+		}
+	}
+
+	// Check context
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Get embedded bundle
+	embeddedBundle := fetcher.GetEmbeddedBundle()
+
+	// Write to temp file then atomic rename
+	mozillaPath := s.mozillaBundlePath()
+	tempPath := mozillaPath + ".tmp"
+
+	if err := s.fs.WriteFile(tempPath, embeddedBundle, 0644); err != nil {
+		return &verifierrors.VerifiError{
+			Op:   "write mozilla bundle temp file",
+			Path: tempPath,
+			Err:  err,
+		}
+	}
+
+	if err := s.fs.Rename(tempPath, mozillaPath); err != nil {
+		s.fs.Remove(tempPath)
+		return &verifierrors.VerifiError{
+			Op:   "rename mozilla bundle",
+			Path: mozillaPath,
+			Err:  err,
+		}
+	}
+
+	// Update metadata with locking
+	updateErr := s.UpdateMetadata(ctx, func(md *Metadata) error {
+		certCount := countCertificates(embeddedBundle)
+		md.MozillaBundle = BundleInfo{
+			Generated: time.Now(),
+			SHA256:    computeSHA256(embeddedBundle),
+			CertCount: certCount,
+			Source:    "embedded",
+			Version:   "", // No version for embedded bundle
+		}
+
+		// Rebuild combined bundle with reset Mozilla bundle
+		return s.rebuildBundle(ctx, md)
+	})
+
+	if updateErr != nil {
+		return updateErr
+	}
+
+	return nil
+}
+
 // RebuildBundle rebuilds the combined certificate bundle.
 // This is a public wrapper around rebuildBundle for use by bundle update operations.
 // It should be called within an UpdateMetadata callback to ensure proper locking.
