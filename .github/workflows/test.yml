@@ -87,7 +87,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
-          version: v2.4.0
+          version: "~> v2"
           args: build --snapshot --clean
 
       - name: Verify binaries
