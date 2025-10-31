@@ -105,7 +105,7 @@ func (s *Store) writeMetadata(m *Metadata) error {
 
 	// Atomic rename (os.Rename is atomic on POSIX systems)
 	if err := s.fs.Rename(tempPath, s.metadataPath()); err != nil {
-		s.fs.Remove(tempPath)
+		_ = s.fs.Remove(tempPath)
 		return &verifierrors.VerifiError{
 			Op:   "rename metadata",
 			Path: s.metadataPath(),
@@ -123,7 +123,7 @@ func (s *Store) UpdateMetadata(ctx context.Context, fn func(*Metadata) error) er
 	if err := lock.Lock(ctx); err != nil {
 		return fmt.Errorf("failed to lock metadata: %w", err)
 	}
-	defer lock.Unlock()
+	defer func() { _ = lock.Unlock() }()
 
 	// Read current metadata
 	metadata, err := s.readMetadata()

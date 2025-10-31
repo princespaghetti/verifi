@@ -136,12 +136,12 @@ func TestPrintBundleInfoHuman(t *testing.T) {
 	printBundleInfoHuman(output)
 
 	// Restore stdout
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	captured := buf.String()
 
 	// Verify output contains expected information

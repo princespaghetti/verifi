@@ -239,7 +239,7 @@ func runBundleUpdate(cmd *cobra.Command, args []string) error {
 		Warning("%s", verifyResult.Warning)
 		fmt.Fprintf(os.Stderr, "Continue anyway? This could indicate a problem with the download.\n")
 		fmt.Fprintf(os.Stderr, "Press Ctrl+C to abort, or Enter to continue: ")
-		fmt.Scanln() // Wait for user confirmation
+		_, _ = fmt.Scanln() // Wait for user confirmation (ignore error - continue anyway)
 	}
 
 	// Write new bundle atomically
@@ -252,7 +252,7 @@ func runBundleUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := os.Rename(tempPath, mozillaBundlePath); err != nil {
-		os.Remove(tempPath)
+		_ = os.Remove(tempPath)
 		fmt.Fprintf(os.Stderr, "Error: Failed to replace bundle: %v\n", err)
 		os.Exit(verifierrors.ExitGeneralError)
 	}

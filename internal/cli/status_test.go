@@ -165,7 +165,7 @@ func TestGatherStatus_MissingEnvFile(t *testing.T) {
 
 	// Remove env.sh if it exists
 	envPath := shell.EnvFilePath(store.BasePath())
-	os.Remove(envPath)
+	_ = os.Remove(envPath)
 
 	status := gatherStatus(store)
 

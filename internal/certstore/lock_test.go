@@ -47,7 +47,7 @@ func TestFileLock_ContextTimeout(t *testing.T) {
 	if err := lock1.Lock(ctx1); err != nil {
 		t.Fatalf("First Lock() failed: %v", err)
 	}
-	defer lock1.Unlock()
+	defer func() { _ = lock1.Unlock() }()
 
 	// Try to acquire with second instance with short timeout
 	ctx2, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
@@ -59,7 +59,7 @@ func TestFileLock_ContextTimeout(t *testing.T) {
 
 	if err == nil {
 		t.Error("Second Lock() should have failed due to timeout")
-		lock2.Unlock()
+		_ = lock2.Unlock()
 	}
 
 	// Should have timed out around 300ms
@@ -105,7 +105,7 @@ func TestFileLock_ConcurrentAccess(t *testing.T) {
 				time.Sleep(1 * time.Millisecond) // Simulate work
 				atomic.StoreInt32(&counter, temp+1)
 
-				lock.Unlock()
+				_ = lock.Unlock()
 				cancel()
 			}
 		}()
@@ -137,7 +137,7 @@ func TestFileLock_ContextCancellation(t *testing.T) {
 	if err := lock1.Lock(ctx1); err != nil {
 		t.Fatalf("First Lock() failed: %v", err)
 	}
-	defer lock1.Unlock()
+	defer func() { _ = lock1.Unlock() }()
 
 	// Create cancellable context for second lock attempt
 	ctx2, cancel := context.WithCancel(context.Background())
@@ -154,7 +154,7 @@ func TestFileLock_ContextCancellation(t *testing.T) {
 
 	if err == nil {
 		t.Error("Second Lock() should have failed due to cancellation")
-		lock2.Unlock()
+		_ = lock2.Unlock()
 	}
 
 	// Should have been cancelled around 200ms
@@ -182,7 +182,7 @@ func TestFileLock_AlreadyLocked(t *testing.T) {
 	if err := lock1.Lock(ctx); err != nil {
 		t.Fatalf("First Lock() failed: %v", err)
 	}
-	defer lock1.Unlock()
+	defer func() { _ = lock1.Unlock() }()
 
 	// Try to acquire the same lock again from different instance
 	lock2 := NewFileLock(lockPath)
@@ -192,7 +192,7 @@ func TestFileLock_AlreadyLocked(t *testing.T) {
 	err := lock2.Lock(ctx2)
 	if err == nil {
 		t.Error("Second Lock() should have failed because file is already locked")
-		lock2.Unlock()
+		_ = lock2.Unlock()
 	}
 }
 
@@ -231,12 +231,12 @@ func TestFileLock_MultipleFiles(t *testing.T) {
 	if err := lock1.Lock(ctx); err != nil {
 		t.Fatalf("Lock1() failed: %v", err)
 	}
-	defer lock1.Unlock()
+	defer func() { _ = lock1.Unlock() }()
 
 	if err := lock2.Lock(ctx); err != nil {
 		t.Fatalf("Lock2() failed: %v", err)
 	}
-	defer lock2.Unlock()
+	defer func() { _ = lock2.Unlock() }()
 
 	// Both should be held at the same time
 	t.Log("Both locks acquired successfully")

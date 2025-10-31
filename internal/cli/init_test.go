@@ -1,10 +1,7 @@
 package cli
 
 import (
-	"bytes"
 	"context"
-	"io"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -12,44 +9,6 @@ import (
 	"github.com/princespaghetti/verifi/internal/certstore"
 )
 
-// captureOutput captures stdout and stderr during function execution
-func captureOutput(f func()) (stdout, stderr string) {
-	oldStdout := os.Stdout
-	oldStderr := os.Stderr
-
-	rOut, wOut, _ := os.Pipe()
-	rErr, wErr, _ := os.Pipe()
-
-	os.Stdout = wOut
-	os.Stderr = wErr
-
-	outC := make(chan string)
-	errC := make(chan string)
-
-	go func() {
-		var buf bytes.Buffer
-		io.Copy(&buf, rOut)
-		outC <- buf.String()
-	}()
-
-	go func() {
-		var buf bytes.Buffer
-		io.Copy(&buf, rErr)
-		errC <- buf.String()
-	}()
-
-	f()
-
-	wOut.Close()
-	wErr.Close()
-	os.Stdout = oldStdout
-	os.Stderr = oldStderr
-
-	stdout = <-outC
-	stderr = <-errC
-
-	return
-}
 
 func TestInitCmd_Exists(t *testing.T) {
 	// Verify the init command is registered

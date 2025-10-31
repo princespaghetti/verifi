@@ -178,7 +178,7 @@ func (s *Store) rebuildBundle(ctx context.Context, metadata *Metadata) error {
 
 	// Atomic rename (os.Rename is atomic on POSIX systems)
 	if err := s.fs.Rename(tempPath, bundlePath); err != nil {
-		s.fs.Remove(tempPath)
+		_ = s.fs.Remove(tempPath)
 		return &verifierrors.VerifiError{
 			Op:   "rename bundle",
 			Path: bundlePath,
@@ -266,7 +266,7 @@ func (s *Store) AddCert(ctx context.Context, certPath, name string, force bool) 
 	}
 
 	if err := s.fs.Rename(tempPath, destPath); err != nil {
-		s.fs.Remove(tempPath)
+		_ = s.fs.Remove(tempPath)
 		return &verifierrors.VerifiError{
 			Op:   "rename certificate",
 			Path: destPath,
@@ -307,7 +307,7 @@ func (s *Store) AddCert(ctx context.Context, certPath, name string, force bool) 
 
 	if updateErr != nil {
 		// Rollback: remove the certificate file
-		s.fs.Remove(destPath)
+		_ = s.fs.Remove(destPath)
 		return updateErr
 	}
 
@@ -434,10 +434,7 @@ func (s *Store) RemoveCert(ctx context.Context, name string) error {
 
 	// Remove the physical certificate file
 	certPath := s.userCertPath(name)
-	if err := s.fs.Remove(certPath); err != nil {
-		// File may not exist, which is okay - we've already removed it from metadata
-		// Log but don't fail
-	}
+	_ = s.fs.Remove(certPath) // Ignore error - file may not exist, which is okay
 
 	// Rebuild the combined bundle
 	rebuildErr := s.UpdateMetadata(ctx, func(md *Metadata) error {
@@ -487,7 +484,7 @@ func (s *Store) ResetMozillaBundle(ctx context.Context) error {
 	}
 
 	if err := s.fs.Rename(tempPath, mozillaPath); err != nil {
-		s.fs.Remove(tempPath)
+		_ = s.fs.Remove(tempPath)
 		return &verifierrors.VerifiError{
 			Op:   "rename mozilla bundle",
 			Path: mozillaPath,

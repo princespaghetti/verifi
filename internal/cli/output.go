@@ -155,7 +155,7 @@ func (t *Table) Print() {
 	for i, h := range t.Headers {
 		headerVals[i] = colorize(h, colorBold)
 	}
-	fmt.Fprintf(t.writer, formatStr+"\n", headerVals...)
+	_, _ = fmt.Fprintf(t.writer, formatStr+"\n", headerVals...) // Ignore write errors - main operation succeeded
 
 	// Print separator
 	totalWidth := 0
@@ -163,7 +163,7 @@ func (t *Table) Print() {
 		totalWidth += w
 	}
 	totalWidth += 2 * (len(widths) - 1) // Add space for separators
-	fmt.Fprintln(t.writer, strings.Repeat("-", totalWidth))
+	_, _ = fmt.Fprintln(t.writer, strings.Repeat("-", totalWidth)) // Ignore write errors - main operation succeeded
 
 	// Print rows
 	for _, row := range t.Rows {
@@ -171,7 +171,7 @@ func (t *Table) Print() {
 		for i, cell := range row {
 			rowVals[i] = cell
 		}
-		fmt.Fprintf(t.writer, formatStr+"\n", rowVals...)
+		_, _ = fmt.Fprintf(t.writer, formatStr+"\n", rowVals...) // Ignore write errors - main operation succeeded
 	}
 }
 
@@ -266,7 +266,7 @@ func Separator(char string, length int) {
 func ConfirmPrompt(message string) bool {
 	fmt.Printf("%s [y/N]: ", message)
 	var response string
-	fmt.Scanln(&response)
+	_, _ = fmt.Scanln(&response) // Ignore error, treat as no confirmation if failed
 	response = strings.ToLower(strings.TrimSpace(response))
 	return response == "y" || response == "yes"
 }

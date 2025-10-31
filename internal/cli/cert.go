@@ -107,7 +107,7 @@ func init() {
 	certAddCmd.Flags().StringVar(&certName, "name", "", "Certificate name (required)")
 	certAddCmd.Flags().BoolVar(&certForce, "force", false, "Force add even if expired")
 	certAddCmd.Flags().BoolVar(&certStdin, "stdin", false, "Read certificate from stdin")
-	certAddCmd.MarkFlagRequired("name")
+	_ = certAddCmd.MarkFlagRequired("name") // Ignore error - setup failure would be caught at runtime
 
 	// cert list flags
 	certListCmd.Flags().BoolVar(&certJSON, "json", false, "Output in JSON format")
@@ -141,7 +141,7 @@ func runCertAdd(cmd *cobra.Command, args []string) error {
 		cleanupTemp = true
 		defer func() {
 			if cleanupTemp {
-				os.Remove(certPath)
+				_ = os.Remove(certPath)
 			}
 		}()
 

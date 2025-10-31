@@ -45,7 +45,7 @@ func (f *Fetcher) FetchMozillaBundle(ctx context.Context, url string) ([]byte, e
 	if err != nil {
 		return nil, fmt.Errorf("download bundle: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }() // Ignore close error - standard practice
 
 	// Check HTTP status
 	if resp.StatusCode != http.StatusOK {

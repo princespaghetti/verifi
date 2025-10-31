@@ -42,7 +42,7 @@ Example usage:
   verifi completion bash > /usr/local/etc/bash_completion.d/verifi
   verifi completion zsh > ~/.zsh/completions/_verifi`,
 	ValidArgs: []string{"bash", "zsh"},
-	Args:      cobra.ExactValidArgs(1),
+	Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	RunE:      runCompletion,
 }
 
