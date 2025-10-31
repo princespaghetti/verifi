@@ -162,7 +162,7 @@ func (t *Table) Print() {
 	for _, w := range widths {
 		totalWidth += w
 	}
-	totalWidth += 2 * (len(widths) - 1) // Add space for separators
+	totalWidth += 2 * (len(widths) - 1)                            // Add space for separators
 	_, _ = fmt.Fprintln(t.writer, strings.Repeat("-", totalWidth)) // Ignore write errors - main operation succeeded
 
 	// Print rows

@@ -9,7 +9,6 @@ import (
 	"github.com/princespaghetti/verifi/internal/certstore"
 )
 
-
 func TestInitCmd_Exists(t *testing.T) {
 	// Verify the init command is registered
 	if initCmd == nil {
