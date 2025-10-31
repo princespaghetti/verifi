@@ -3,7 +3,7 @@ cask "verifi" do
   name "verifi"
   desc "Unified certificate management for developers"
   homepage "https://github.com/princespaghetti/verifi"
-  version "0.1.3"
+  version "0.1.4"
 
   livecheck do
     skip "Auto-generated on release."
@@ -14,22 +14,28 @@ cask "verifi" do
   on_macos do
     on_intel do
       url "https://github.com/princespaghetti/verifi/releases/download/v#{version}/verifi_#{version}_darwin_amd64.tar.gz"
-      sha256 "ac2f31ea19822261642259c18217c57cb0c60b195a2b402748a5638dd70fb47c"
+      sha256 "2f646bf3367a15de2cf724dd543d1928e0439ecdd1f2c67f7bc4d1ddfcad66a5"
     end
     on_arm do
       url "https://github.com/princespaghetti/verifi/releases/download/v#{version}/verifi_#{version}_darwin_arm64.tar.gz"
-      sha256 "21f4d87c2f8ae3cd5101c1889bae2ce87c659dd978e5315f1ad075322cf712d5"
+      sha256 "2e874fffa11e226c7868da16efebdee2fe8fd6ce7bcf798acc6ea185fe3a0422"
     end
   end
 
   on_linux do
     on_intel do
       url "https://github.com/princespaghetti/verifi/releases/download/v#{version}/verifi_#{version}_linux_amd64.tar.gz"
-      sha256 "e270bd2cbfc861c149940a42267e99f5cb57b58cf2d402ce873697b5073fef10"
+      sha256 "27617e040b8ac971b38c69ee9b0d6f870799599f9b79dc177c731d2668a0fe6e"
     end
     on_arm do
       url "https://github.com/princespaghetti/verifi/releases/download/v#{version}/verifi_#{version}_linux_arm64.tar.gz"
-      sha256 "8244a4a105303be0f7ae2ac8aa868aa07059f1345dc066764d240439e6b0339d"
+      sha256 "eefee815fa2661e1e31b8df8bc1b667b4e94e6b1822ab14c328ab51f6507d275"
+    end
+  end
+
+  postflight do
+    if OS.mac?
+      system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/verifi"]
     end
   end
 
