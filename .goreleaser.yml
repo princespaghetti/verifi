@@ -75,7 +75,6 @@ homebrew_casks:
       owner: princespaghetti
       name: verifi
       token: "{{ .Env.GITHUB_TOKEN }}"
-    directory: homebrew-verifi
     homepage: "https://github.com/princespaghetti/verifi"
     description: "Unified certificate management for developers"
     binaries:
