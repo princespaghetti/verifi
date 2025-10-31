@@ -79,7 +79,8 @@ verifi operates on a simple principle: maintain a combined certificate bundle co
 
 **Homebrew** (coming soon):
 ```bash
-brew install princespaghetti/tap/verifi
+brew tap princespaghetti/verifi https://github.com/princespaghetti/verifi
+brew install verifi
 ```
 
 **Manual installation**:
