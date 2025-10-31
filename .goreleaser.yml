@@ -68,6 +68,20 @@ checksum:
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
+# Homebrew cask configuration
+homebrew_casks:
+  - name: verifi
+    repository:
+      owner: princespaghetti
+      name: verifi
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    directory: homebrew-verifi
+    homepage: "https://github.com/princespaghetti/verifi"
+    description: "Unified certificate management for developers"
+    binaries:
+      - verifi
+    dependencies: []
+
 # Changelog configuration
 changelog:
   sort: asc
@@ -112,9 +126,10 @@ release:
 
     ### macOS
 
-    **Homebrew** (coming soon):
+    **Homebrew**:
     ```bash
-    brew install princespaghetti/tap/verifi
+    brew tap princespaghetti/verifi
+    brew install verifi
     ```
 
     **Manual installation**:
