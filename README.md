@@ -112,17 +112,7 @@ No per-tool configuration required - these tools automatically recognize the env
 
 - [Usage Guide](USAGE.md) - Detailed workflows, common operations, and integration examples
 - [Design Principles](PRINCIPLES.md) - Core principles and architecture
-- [Contributing](CONTRIBUTING.md) - Development setup and contribution guidelines
 - [Implementation Plan](PLAN.md) - Complete implementation roadmap
-
-## Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
-
-- Development environment setup
-- Code structure and patterns
-- Testing requirements
-- Pull request process
 
 ## Support
 
