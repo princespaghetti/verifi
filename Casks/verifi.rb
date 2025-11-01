@@ -3,7 +3,7 @@ cask "verifi" do
   name "verifi"
   desc "Unified certificate management for developers"
   homepage "https://github.com/princespaghetti/verifi"
-  version "0.1.5"
+  version "0.1.6"
 
   livecheck do
     skip "Auto-generated on release."
@@ -14,22 +14,22 @@ cask "verifi" do
   on_macos do
     on_intel do
       url "https://github.com/princespaghetti/verifi/releases/download/v#{version}/verifi_#{version}_darwin_amd64.tar.gz"
-      sha256 "1bb1e70316c1904753f020c7d695ef15dbc69882b723388468ee3315a1670e82"
+      sha256 "983435ec888d6d33670f0e47bf510438c3e719d7426a8790a1fde93853e4d7f3"
     end
     on_arm do
       url "https://github.com/princespaghetti/verifi/releases/download/v#{version}/verifi_#{version}_darwin_arm64.tar.gz"
-      sha256 "2bed533b387972f0bd591860a5bd559dd82512bf124febcb193c6901fe147027"
+      sha256 "fe2ad875b0cf33d1c501ae1b1d8f98e22e5c9d13ab9cf9d3dd575c77908936ae"
     end
   end
 
   on_linux do
     on_intel do
       url "https://github.com/princespaghetti/verifi/releases/download/v#{version}/verifi_#{version}_linux_amd64.tar.gz"
-      sha256 "d912199d8032412d814567e87a47140197af3cc516739d01e1aab04381cbe7ca"
+      sha256 "9fa616bf795a4c50ada9be2f8260530096b9b9e06c347a9b106426d338e8655b"
     end
     on_arm do
       url "https://github.com/princespaghetti/verifi/releases/download/v#{version}/verifi_#{version}_linux_arm64.tar.gz"
-      sha256 "df9f3a4d2e6e7c3e7b63cd25332cf8f77306907f69b37eae544a1bd006c63bc5"
+      sha256 "265f16c734dd83820b71debcc917dc8be538176788f46cc5941a9e0db26f11a0"
     end
   end
 
@@ -40,7 +40,7 @@ cask "verifi" do
   end
 
   uninstall_postflight do
-    system_command "/usr/bin/rm", args: ["-rf", "~/.verifi"]
+    system_command "sh", args: ["-c", "rm -rf ~/.verifi"]
   end
 
   # No zap stanza required
