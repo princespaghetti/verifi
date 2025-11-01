@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -143,7 +144,7 @@ func runBundleInfo(cmd *cobra.Command, args []string) error {
 	}
 
 	// Get file size
-	mozillaBundlePath := store.BasePath() + "/certs/bundles/mozilla-ca-bundle.pem"
+	mozillaBundlePath := filepath.Join(store.BasePath(), "certs", "bundles", "mozilla-ca-bundle.pem")
 	var sizeBytes int64
 	if info, err := os.Stat(mozillaBundlePath); err == nil {
 		sizeBytes = info.Size()
@@ -243,7 +244,7 @@ func runBundleUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Write new bundle atomically
-	mozillaBundlePath := store.BasePath() + "/certs/bundles/mozilla-ca-bundle.pem"
+	mozillaBundlePath := filepath.Join(store.BasePath(), "certs", "bundles", "mozilla-ca-bundle.pem")
 	tempPath := mozillaBundlePath + ".tmp"
 
 	if err := os.WriteFile(tempPath, bundleData, 0644); err != nil {

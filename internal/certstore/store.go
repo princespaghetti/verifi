@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"time"
 
 	verifierrors "github.com/princespaghetti/verifi/internal/errors"
@@ -220,6 +221,14 @@ func (s *Store) AddCert(ctx context.Context, certPath, name string, force bool) 
 		return &verifierrors.VerifiError{
 			Op:  "add certificate",
 			Err: verifierrors.ErrStoreNotInit,
+		}
+	}
+
+	// Validate certificate name (no path separators allowed)
+	if strings.Contains(name, "/") || strings.Contains(name, "\\") || strings.Contains(name, "..") {
+		return &verifierrors.VerifiError{
+			Op:  "add certificate",
+			Err: fmt.Errorf("certificate name must not contain path separators or '..'"),
 		}
 	}
 
