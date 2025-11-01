@@ -310,27 +310,22 @@ tools (e.g., `curl -v https://registry.npmjs.org`, `npm ping`, etc.).
 
 ---
 
-## Phase 9: Java Keystore Integration (Future)
-**Goal**: Add Java keystore management using keytool for complete ecosystem coverage
+## Phase 9: Java Keystore Integration
+**Status**: NOT PLANNED
 
-**Deliverables**:
-- Java installation detection
-- `verifi java add <name>` - Add certificates to Java keystores using keytool
-- `verifi java list` - Show certificates in Java keystores
-- `verifi java remove <name>` - Remove certificates from Java keystores
-- Support for multiple Java versions/installations
+**Rationale**: Java keystore integration was removed from the roadmap because it doesn't align with verifi's core design principles:
 
-**Verification**:
-- Detects Java installations automatically
-- `verifi java add` imports certificates into cacerts keystore
-- `verifi java list` shows certificates in keystore
-- Works with multiple Java versions (Oracle, OpenJDK, etc.)
-- Handles keystore passwords appropriately
+- **Violates "Simple, Not Automatic"**: Java keystore modifications require sudo access and automatic system file modifications
+- **Adds significant complexity**: Multiple Java installations, vendors (Oracle, OpenJDK, Azul, Corretto), keystore formats (JKS, PKCS12), and permission handling across platforms
+- **Smaller user base**: Environment variables (verifi's core approach) work for 95%+ of dev tools; Java is a subset
+- **High maintenance burden**: Testing matrix would expand significantly (Java versions × OS × vendors × keystore states)
 
-**Files to Create**:
-- `internal/java/detect.go` - Java installation detection
-- `internal/java/keystore.go` - Keytool operations
-- `internal/cli/java.go` - Java command implementations
+**Alternative Solution**: Comprehensive manual integration documentation is provided in [USAGE.md](USAGE.md#java-keystore-integration), including:
+- One-time keytool commands for importing certificates
+- Automation scripts for multiple Java versions
+- Clear explanation of why this approach is preferred
+
+This keeps verifi focused on its core mission (environment variable configuration) while still enabling Java developers through clear, actionable documentation.
 
 ---
 

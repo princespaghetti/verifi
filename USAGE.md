@@ -168,3 +168,81 @@ git push origin main
 aws s3 ls
 aws ec2 describe-instances
 ```
+
+### Java Keystore Integration
+
+Java applications use a separate keystore system that doesn't respect environment variables. For Java tools that need custom certificates, manually import them using `keytool`.
+
+#### One-Time Setup
+
+```bash
+# Find your Java installation
+/usr/libexec/java_home -V  # macOS
+which java && readlink -f $(which java)  # Linux
+
+# Import your corporate certificate
+sudo keytool -import -trustcacerts \
+  -alias verifi-corporate \
+  -file ~/.verifi/certs/user/corporate-ca.pem \
+  -keystore $JAVA_HOME/lib/security/cacerts \
+  -storepass changeit
+
+# Verify import
+keytool -list -alias verifi-corporate \
+  -keystore $JAVA_HOME/lib/security/cacerts \
+  -storepass changeit
+```
+
+#### Automation Script for Multiple Java Versions
+
+If you have multiple Java installations, save this as `~/.verifi/java-import.sh`:
+
+```bash
+#!/bin/bash
+# Import verifi certificates to all Java installations
+
+# macOS
+for java_home in /Library/Java/JavaVirtualMachines/*/Contents/Home; do
+  if [ -d "$java_home/lib/security" ]; then
+    echo "Importing to $java_home"
+    sudo keytool -import -noprompt -trustcacerts \
+      -alias verifi-corporate \
+      -file ~/.verifi/certs/user/corporate-ca.pem \
+      -keystore "$java_home/lib/security/cacerts" \
+      -storepass changeit 2>/dev/null || echo "  Already exists or failed"
+  fi
+done
+
+# Linux (common paths)
+for java_home in /usr/lib/jvm/*; do
+  if [ -d "$java_home/lib/security" ]; then
+    echo "Importing to $java_home"
+    sudo keytool -import -noprompt -trustcacerts \
+      -alias verifi-corporate \
+      -file ~/.verifi/certs/user/corporate-ca.pem \
+      -keystore "$java_home/lib/security/cacerts" \
+      -storepass changeit 2>/dev/null || echo "  Already exists or failed"
+  fi
+done
+
+echo "Done! Verify with: keytool -list -keystore \$JAVA_HOME/lib/security/cacerts | grep verifi"
+```
+
+Make it executable and run:
+
+```bash
+chmod +x ~/.verifi/java-import.sh
+~/.verifi/java-import.sh
+```
+
+#### Removing Certificates
+
+To remove a certificate from Java keystores:
+
+```bash
+sudo keytool -delete -alias verifi-corporate \
+  -keystore $JAVA_HOME/lib/security/cacerts \
+  -storepass changeit
+```
+
+**Note**: verifi doesn't automatically manage Java keystores because this would require sudo access, violate the "Simple, Not Automatic" design principle, and add significant complexity for a smaller subset of users. Manual integration gives you full control while keeping verifi focused on environment variable configuration.
