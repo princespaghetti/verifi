@@ -150,21 +150,28 @@ func runCertAdd(cmd *cobra.Command, args []string) error {
 		data, err := io.ReadAll(os.Stdin)
 		if err != nil {
 			Error("Failed to read from stdin: %v", err)
+			_ = tempFile.Close()
+			_ = os.Remove(certPath)
 			os.Exit(verifierrors.ExitGeneralError)
 		}
 
 		if len(data) == 0 {
 			Error("No certificate data provided on stdin")
+			_ = tempFile.Close()
+			_ = os.Remove(certPath)
 			os.Exit(verifierrors.ExitConfigError)
 		}
 
 		if _, err := tempFile.Write(data); err != nil {
 			Error("Failed to write certificate data: %v", err)
+			_ = tempFile.Close()
+			_ = os.Remove(certPath)
 			os.Exit(verifierrors.ExitGeneralError)
 		}
 
 		if err := tempFile.Close(); err != nil {
 			Error("Failed to close temporary file: %v", err)
+			_ = os.Remove(certPath)
 			os.Exit(verifierrors.ExitGeneralError)
 		}
 	} else {
