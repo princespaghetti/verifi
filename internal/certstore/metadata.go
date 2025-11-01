@@ -2,8 +2,6 @@ package certstore
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -138,12 +136,6 @@ func (s *Store) UpdateMetadata(ctx context.Context, fn func(*Metadata) error) er
 
 	// Write updated metadata
 	return s.writeMetadata(metadata)
-}
-
-// computeSHA256 computes the SHA256 hash of the given data.
-func computeSHA256(data []byte) string {
-	hash := sha256.Sum256(data)
-	return hex.EncodeToString(hash[:])
 }
 
 // migrateMetadata handles schema version migrations.

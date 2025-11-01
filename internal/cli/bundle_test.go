@@ -288,16 +288,14 @@ func TestComputeSHA256_Consistency(t *testing.T) {
 	// Test that computeSHA256 wrapper works correctly
 	testData := []byte("test data for sha256")
 
-	// Compute using the wrapper in bundle.go (which calls fetcher.ComputeSHA256)
-	hash1 := computeSHA256(testData)
+	// Compute using fetcher
+	hash := fetcher.ComputeSHA256(testData)
 
-	// Compute using fetcher directly
-	hash2 := fetcher.ComputeSHA256(testData)
+	// SHA256 should be 64 hex characters
+	assert.Len(t, hash, 64)
 
-	// Should be identical
-	assert.Equal(t, hash1, hash2)
-	assert.Len(t, hash1, 64) // SHA256 is 64 hex characters
-	assert.Regexp(t, "^[a-f0-9]{64}$", hash1)
+	// Verify it's a valid hex string
+	assert.Regexp(t, "^[a-f0-9]{64}$", hash)
 }
 
 func TestBundleUpdate_MozillaDateExtraction(t *testing.T) {

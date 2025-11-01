@@ -14,6 +14,7 @@ import (
 
 	"github.com/princespaghetti/verifi/internal/certstore"
 	verifierrors "github.com/princespaghetti/verifi/internal/errors"
+	"github.com/princespaghetti/verifi/internal/fetcher"
 	"github.com/princespaghetti/verifi/internal/shell"
 )
 
@@ -321,7 +322,7 @@ func checkMozillaBundle(store *certstore.Store) CheckResult {
 	// Verify hash matches metadata
 	metadata, err := store.GetMetadata()
 	if err == nil {
-		actualSHA := computeSHA256(data)
+		actualSHA := fetcher.ComputeSHA256(data)
 		if actualSHA != metadata.MozillaBundle.SHA256 {
 			result.Status = "fail"
 			result.Issues = append(result.Issues, "Mozilla bundle SHA256 hash mismatch")
@@ -378,7 +379,7 @@ func checkCombinedBundle(store *certstore.Store) CheckResult {
 	// Verify hash matches metadata
 	metadata, err := store.GetMetadata()
 	if err == nil {
-		actualSHA := computeSHA256(data)
+		actualSHA := fetcher.ComputeSHA256(data)
 		if actualSHA != metadata.CombinedBundle.SHA256 {
 			result.Status = "fail"
 			result.Issues = append(result.Issues, "Combined bundle SHA256 hash mismatch")

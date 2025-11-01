@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/princespaghetti/verifi/internal/fetcher"
 )
 
 func TestNewMetadata_Defaults(t *testing.T) {
@@ -59,16 +61,16 @@ func TestComputeSHA256(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := computeSHA256(tt.data)
+			got := fetcher.ComputeSHA256(tt.data)
 			if got != tt.want {
-				t.Errorf("computeSHA256() = %q, want %q", got, tt.want)
+				t.Errorf("fetcher.ComputeSHA256() = %q, want %q", got, tt.want)
 			}
 
 			// Verify it matches manual computation
 			hash := sha256.Sum256(tt.data)
 			expected := hex.EncodeToString(hash[:])
 			if got != expected {
-				t.Errorf("computeSHA256() != manual hash: %q vs %q", got, expected)
+				t.Errorf("fetcher.ComputeSHA256() != manual hash: %q vs %q", got, expected)
 			}
 		})
 	}

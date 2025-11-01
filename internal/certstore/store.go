@@ -76,7 +76,7 @@ func (s *Store) Init(ctx context.Context, force bool) error {
 	metadata := NewMetadata()
 	metadata.MozillaBundle = BundleInfo{
 		Generated: time.Now(),
-		SHA256:    computeSHA256(embeddedBundle),
+		SHA256:    fetcher.ComputeSHA256(embeddedBundle),
 		CertCount: certCount,
 		Source:    "embedded",
 	}
@@ -194,7 +194,7 @@ func (s *Store) rebuildBundle(ctx context.Context, metadata *Metadata) error {
 
 	metadata.CombinedBundle = BundleInfo{
 		Generated: time.Now(),
-		SHA256:    computeSHA256(combined),
+		SHA256:    fetcher.ComputeSHA256(combined),
 		CertCount: countCertificates(combined),
 		Sources:   sources,
 	}
@@ -497,7 +497,7 @@ func (s *Store) ResetMozillaBundle(ctx context.Context) error {
 		certCount := countCertificates(embeddedBundle)
 		md.MozillaBundle = BundleInfo{
 			Generated: time.Now(),
-			SHA256:    computeSHA256(embeddedBundle),
+			SHA256:    fetcher.ComputeSHA256(embeddedBundle),
 			CertCount: certCount,
 			Source:    "embedded",
 			Version:   "", // No version for embedded bundle

@@ -268,7 +268,7 @@ func runBundleUpdate(cmd *cobra.Command, args []string) error {
 		// Update Mozilla bundle info
 		md.MozillaBundle = certstore.BundleInfo{
 			Generated: time.Now(),
-			SHA256:    computeSHA256(bundleData),
+			SHA256:    fetcher.ComputeSHA256(bundleData),
 			CertCount: verifyResult.CertCount,
 			Source:    bundleURL,
 			Version:   mozillaDateStr,
@@ -307,12 +307,6 @@ func runBundleUpdate(cmd *cobra.Command, args []string) error {
 	EmptyLine()
 
 	return nil
-}
-
-// computeSHA256 computes the SHA256 hash of data and returns it as a hex string.
-func computeSHA256(data []byte) string {
-	hash := fetcher.ComputeSHA256(data)
-	return hash
 }
 
 func runBundleReset(cmd *cobra.Command, args []string) error {
