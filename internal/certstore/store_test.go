@@ -121,6 +121,9 @@ func TestInit_AlreadyInitialized(t *testing.T) {
 	if err == nil {
 		t.Error("Second Init() should fail when already initialized")
 	}
+	if !verifierrors.IsError(err, verifierrors.ErrStoreAlreadyInit) {
+		t.Errorf("Expected ErrStoreAlreadyInit, got: %v", err)
+	}
 }
 
 func TestInit_Force(t *testing.T) {

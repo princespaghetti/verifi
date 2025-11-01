@@ -42,7 +42,7 @@ func (s *Store) Init(ctx context.Context, force bool) error {
 	// Check if already initialized
 	if !force {
 		if _, err := s.fs.Stat(s.metadataPath()); err == nil {
-			return verifierrors.ErrStoreNotInit // Actually means already initialized
+			return verifierrors.ErrStoreAlreadyInit
 		}
 	}
 

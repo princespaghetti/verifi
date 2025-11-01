@@ -28,10 +28,11 @@ func (e *VerifiError) Unwrap() error {
 
 // Predefined errors for common scenarios.
 var (
-	ErrCertExpired  = fmt.Errorf("certificate has expired")
-	ErrInvalidPEM   = fmt.Errorf("invalid PEM format")
-	ErrCertNotFound = fmt.Errorf("certificate not found")
-	ErrStoreNotInit = fmt.Errorf("certificate store not initialized")
+	ErrCertExpired      = fmt.Errorf("certificate has expired")
+	ErrInvalidPEM       = fmt.Errorf("invalid PEM format")
+	ErrCertNotFound     = fmt.Errorf("certificate not found")
+	ErrStoreNotInit     = fmt.Errorf("certificate store not initialized")
+	ErrStoreAlreadyInit = fmt.Errorf("certificate store already initialized")
 )
 
 // Exit codes - use these constants in CLI commands instead of hardcoding values.

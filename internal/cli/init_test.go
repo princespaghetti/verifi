@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/princespaghetti/verifi/internal/certstore"
+	verifierrors "github.com/princespaghetti/verifi/internal/errors"
 )
 
 func TestInitCmd_Exists(t *testing.T) {
@@ -90,10 +91,13 @@ func TestInitCmd_AlreadyInitialized(t *testing.T) {
 		t.Error("Store should be initialized")
 	}
 
-	// Second init should fail
+	// Second init should fail with ErrStoreAlreadyInit
 	err = store.Init(ctx, false)
 	if err == nil {
 		t.Error("Second Init() should fail")
+	}
+	if !verifierrors.IsError(err, verifierrors.ErrStoreAlreadyInit) {
+		t.Errorf("Expected ErrStoreAlreadyInit, got: %v", err)
 	}
 }
 
