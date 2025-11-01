@@ -87,7 +87,7 @@ homebrew_casks:
             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/verifi"]
           end
         uninstall: |
-          system_command "/usr/bin/rm", args: ["-rf", "~/.verifi"]
+          system_command "sh", args: ["-c", "rm -rf ~/.verifi"]
 
 # Changelog configuration
 changelog:
