@@ -497,6 +497,144 @@ bundlePath := basePath + "/certs/bundles/combined-bundle.pem"  // ❌ Unix-only
 bundlePath := "~/.verifi/certs/bundles/combined-bundle.pem"    // ❌ ~ not expanded
 ```
 
+## Code Quality Guidelines
+
+### Avoid Redundant Wrapper Functions
+
+**DON'T create wrapper functions that add no value**:
+
+```go
+// ❌ BAD - Redundant wrapper around standard library
+func IsError(err, target error) bool {
+    return errors.Is(err, target)
+}
+
+// ✅ GOOD - Use standard library directly
+if errors.Is(err, ErrCertExpired) {
+    // handle error
+}
+```
+
+**When wrappers ARE acceptable**:
+- They add meaningful business logic or validation
+- They provide a domain-specific abstraction that improves readability
+- They centralize complex behavior that would otherwise be duplicated
+
+```go
+// ✅ GOOD - Adds validation and domain logic
+func ValidateCert(data []byte) (*x509.Certificate, error) {
+    block, _ := pem.Decode(data)
+    if block == nil {
+        return nil, ErrInvalidPEM
+    }
+    cert, err := x509.ParseCertificate(block.Bytes)
+    if err != nil {
+        return nil, fmt.Errorf("parse certificate: %w", err)
+    }
+    // Additional domain-specific validation
+    if time.Now().After(cert.NotAfter) {
+        return nil, ErrCertExpired
+    }
+    return cert, nil
+}
+```
+
+### Eliminate Code Duplication (DRY Principle)
+
+**Never duplicate function implementations across packages**:
+
+```go
+// ❌ BAD - Same function exists in multiple packages
+// internal/certstore/store.go
+func countCertificates(pemData []byte) int { ... }
+
+// internal/fetcher/verify.go
+func countCertificates(pemData []byte) int { ... }  // Duplicate!
+
+// ✅ GOOD - Single implementation, exported from appropriate package
+// internal/fetcher/verify.go
+func CountCertificates(pemData []byte) int { ... }
+
+// internal/certstore/store.go
+import "github.com/princespaghetti/verifi/internal/fetcher"
+count := fetcher.CountCertificates(bundleData)
+```
+
+**Guidelines for shared code**:
+- Place shared utilities in the package where they're most semantically appropriate
+- Export the function (capitalize) if needed by other packages
+- Never copy-paste implementations
+
+### Avoid Dead Code
+
+**Remove unused functions immediately**:
+
+```go
+// ❌ BAD - Unused function that was never called
+func RepeatString(s string, n int) string {
+    return strings.Repeat(s, n)
+}
+
+// ✅ GOOD - Use standard library directly where needed
+separator := strings.Repeat("=", 40)
+```
+
+**If you create a function but don't use it immediately, ask yourself**:
+- Is this actually needed (YAGNI - You Aren't Gonna Need It)?
+- Should this be in a utility package, or is it premature abstraction?
+- Will this definitely be used soon, or am I speculating about future needs?
+
+### Prefer Direct Standard Library Usage
+
+**Use Go's standard library directly unless wrapping adds clear value**:
+
+```go
+// ❌ BAD - Unnecessary wrappers
+func RepeatString(s string, n int) string { return strings.Repeat(s, n) }
+func JoinStrings(elems []string, sep string) string { return strings.Join(elems, sep) }
+
+// ✅ GOOD - Direct usage
+separator := strings.Repeat("=", 40)
+path := strings.Join(parts, "/")
+```
+
+**Exceptions where wrappers make sense**:
+- Creating test doubles (interfaces for os.ReadFile, http.Client, etc.)
+- Adding context-specific error handling
+- Centralizing complex standard library usage patterns
+
+### Interface Wrappers for Testing (APPROVED Pattern)
+
+**This pattern IS recommended and should be kept**:
+
+```go
+// ✅ GOOD - Interface wrapper for testing
+type FileSystem interface {
+    ReadFile(path string) ([]byte, error)
+    WriteFile(path string, data []byte, perm os.FileMode) error
+}
+
+type OSFileSystem struct{}
+
+func (fs *OSFileSystem) ReadFile(path string) ([]byte, error) {
+    return os.ReadFile(path)  // Wrapper is intentional for dependency injection
+}
+```
+
+This is acceptable because:
+- Enables dependency injection for testing
+- Provides a seam for mocking
+- Mentioned explicitly in CLAUDE.md's "Interface-Based Design for Testing" pattern
+
+### Code Review Checklist
+
+Before committing code, verify:
+- [ ] No functions that simply wrap standard library without adding logic
+- [ ] No duplicate implementations across packages
+- [ ] All defined functions are actually used
+- [ ] Standard library is used directly when possible
+- [ ] Wrapper functions have clear justification (testing, validation, business logic)
+
 ## Embedded Mozilla Bundle Pattern
 
 **Use `go:embed` to bundle Mozilla CA certs in the binary**:
@@ -912,8 +1050,9 @@ verifi status --json
 5. **Use context**: All long-running operations accept context.Context
 6. **Use temp files**: All file writes use temp file + atomic rename pattern
 7. **Log with slog**: Structured logging for debugging
-8. **Run linter**: `golangci-lint run` before committing
-9. **Update this file**: When you discover new patterns or make architectural decisions
+8. **Avoid redundant code**: Check "Code Quality Guidelines" - no unnecessary wrappers, no duplication, no dead code
+9. **Run linter**: `golangci-lint run` before committing
+10. **Update this file**: When you discover new patterns or make architectural decisions
 
 ## Key Design Decisions
 
