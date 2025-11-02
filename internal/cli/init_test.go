@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -96,7 +97,7 @@ func TestInitCmd_AlreadyInitialized(t *testing.T) {
 	if err == nil {
 		t.Error("Second Init() should fail")
 	}
-	if !verifierrors.IsError(err, verifierrors.ErrStoreAlreadyInit) {
+	if !errors.Is(err, verifierrors.ErrStoreAlreadyInit) {
 		t.Errorf("Expected ErrStoreAlreadyInit, got: %v", err)
 	}
 }

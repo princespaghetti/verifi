@@ -2,6 +2,7 @@ package certstore
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -121,7 +122,7 @@ func TestInit_AlreadyInitialized(t *testing.T) {
 	if err == nil {
 		t.Error("Second Init() should fail when already initialized")
 	}
-	if !verifierrors.IsError(err, verifierrors.ErrStoreAlreadyInit) {
+	if !errors.Is(err, verifierrors.ErrStoreAlreadyInit) {
 		t.Errorf("Expected ErrStoreAlreadyInit, got: %v", err)
 	}
 }
@@ -268,7 +269,7 @@ func TestAddCert_NotInitialized(t *testing.T) {
 		t.Error("AddCert() should fail when store not initialized")
 	}
 
-	if !verifierrors.IsError(err, verifierrors.ErrStoreNotInit) {
+	if !errors.Is(err, verifierrors.ErrStoreNotInit) {
 		t.Errorf("Error should be ErrStoreNotInit, got: %v", err)
 	}
 }
@@ -341,7 +342,7 @@ func TestListCerts_NotInitialized(t *testing.T) {
 		t.Errorf("ListCerts() should return nil certs on error, got %v", certs)
 	}
 
-	if !verifierrors.IsError(err, verifierrors.ErrStoreNotInit) {
+	if !errors.Is(err, verifierrors.ErrStoreNotInit) {
 		t.Errorf("Error should be ErrStoreNotInit, got: %v", err)
 	}
 }
@@ -521,7 +522,7 @@ func TestStore_GetCertInfo_NotFound(t *testing.T) {
 		t.Error("GetCertInfo() should fail for non-existent cert")
 	}
 
-	if !verifierrors.IsError(err, verifierrors.ErrCertNotFound) {
+	if !errors.Is(err, verifierrors.ErrCertNotFound) {
 		t.Errorf("Expected ErrCertNotFound, got: %v", err)
 	}
 }
@@ -540,7 +541,7 @@ func TestStore_GetCertInfo_NotInitialized(t *testing.T) {
 		t.Error("GetCertInfo() should fail when store is not initialized")
 	}
 
-	if !verifierrors.IsError(err, verifierrors.ErrStoreNotInit) {
+	if !errors.Is(err, verifierrors.ErrStoreNotInit) {
 		t.Errorf("Expected ErrStoreNotInit, got: %v", err)
 	}
 }
@@ -632,7 +633,7 @@ func TestStore_RemoveCert_NotFound(t *testing.T) {
 		t.Error("RemoveCert() should fail for non-existent cert")
 	}
 
-	if !verifierrors.IsError(err, verifierrors.ErrCertNotFound) {
+	if !errors.Is(err, verifierrors.ErrCertNotFound) {
 		t.Errorf("Expected ErrCertNotFound, got: %v", err)
 	}
 }
@@ -651,7 +652,7 @@ func TestStore_RemoveCert_NotInitialized(t *testing.T) {
 		t.Error("RemoveCert() should fail when store is not initialized")
 	}
 
-	if !verifierrors.IsError(err, verifierrors.ErrStoreNotInit) {
+	if !errors.Is(err, verifierrors.ErrStoreNotInit) {
 		t.Errorf("Expected ErrStoreNotInit, got: %v", err)
 	}
 }
@@ -745,7 +746,7 @@ func TestStore_ResetMozillaBundle_NotInitialized(t *testing.T) {
 		t.Error("ResetMozillaBundle() should fail when store is not initialized")
 	}
 
-	if !verifierrors.IsError(err, verifierrors.ErrStoreNotInit) {
+	if !errors.Is(err, verifierrors.ErrStoreNotInit) {
 		t.Errorf("Expected ErrStoreNotInit, got: %v", err)
 	}
 }

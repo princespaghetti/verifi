@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -211,12 +212,12 @@ func runCertAdd(cmd *cobra.Command, args []string) error {
 
 	if err := store.AddCert(ctx, certPath, certName, certForce); err != nil {
 		// Check for specific error types
-		if verifierrors.IsError(err, verifierrors.ErrCertExpired) {
+		if errors.Is(err, verifierrors.ErrCertExpired) {
 			Error("Certificate has expired")
 			fmt.Fprintf(os.Stderr, "Use --force to add expired certificates\n")
 			os.Exit(verifierrors.ExitCertError)
 		}
-		if verifierrors.IsError(err, verifierrors.ErrInvalidPEM) {
+		if errors.Is(err, verifierrors.ErrInvalidPEM) {
 			Error("Invalid PEM format")
 			os.Exit(verifierrors.ExitCertError)
 		}
@@ -354,7 +355,7 @@ func runCertRemove(cmd *cobra.Command, args []string) error {
 
 	if err := store.RemoveCert(ctx, name); err != nil {
 		// Check for specific error types
-		if verifierrors.IsError(err, verifierrors.ErrCertNotFound) {
+		if errors.Is(err, verifierrors.ErrCertNotFound) {
 			Error("Certificate '%s' not found", name)
 			fmt.Fprintf(os.Stderr, "Use 'verifi cert list' to see available certificates\n")
 			os.Exit(verifierrors.ExitCertError)
@@ -392,7 +393,7 @@ func runCertInspect(cmd *cobra.Command, args []string) error {
 	info, err := store.GetCertInfo(name)
 	if err != nil {
 		// Check for specific error types
-		if verifierrors.IsError(err, verifierrors.ErrCertNotFound) {
+		if errors.Is(err, verifierrors.ErrCertNotFound) {
 			Error("Certificate '%s' not found", name)
 			fmt.Fprintf(os.Stderr, "Use 'verifi cert list' to see available certificates\n")
 			os.Exit(verifierrors.ExitCertError)

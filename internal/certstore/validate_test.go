@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"math/big"
 	"strings"
 	"testing"
@@ -136,7 +137,7 @@ func TestValidateCert(t *testing.T) {
 
 				// Check for specific error type if specified
 				if tt.errType != nil {
-					if !verifierrors.IsError(err, tt.errType) {
+					if !errors.Is(err, tt.errType) {
 						t.Errorf("ValidateCert() error = %v, want error type %v", err, tt.errType)
 					}
 				}

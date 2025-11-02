@@ -64,67 +64,6 @@ func TestVerifiError_Unwrap(t *testing.T) {
 	}
 }
 
-func TestIsError(t *testing.T) {
-	tests := []struct {
-		name   string
-		err    error
-		target error
-		want   bool
-	}{
-		{
-			name:   "direct match",
-			err:    ErrCertExpired,
-			target: ErrCertExpired,
-			want:   true,
-		},
-		{
-			name: "wrapped error matches",
-			err: &VerifiError{
-				Op:  "validate certificate",
-				Err: ErrCertExpired,
-			},
-			target: ErrCertExpired,
-			want:   true,
-		},
-		{
-			name: "wrapped multiple levels",
-			err: &VerifiError{
-				Op: "outer",
-				Err: &VerifiError{
-					Op:  "inner",
-					Err: ErrInvalidPEM,
-				},
-			},
-			target: ErrInvalidPEM,
-			want:   true,
-		},
-		{
-			name:   "no match",
-			err:    ErrCertExpired,
-			target: ErrInvalidPEM,
-			want:   false,
-		},
-		{
-			name: "wrapped different error",
-			err: &VerifiError{
-				Op:  "test",
-				Err: ErrCertExpired,
-			},
-			target: ErrCertNotFound,
-			want:   false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := IsError(tt.err, tt.target)
-			if got != tt.want {
-				t.Errorf("IsError() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestPredefinedErrors(t *testing.T) {
 	// Verify all predefined errors are distinct
 	errors := []error{
