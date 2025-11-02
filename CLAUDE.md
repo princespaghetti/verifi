@@ -861,7 +861,7 @@ These environment variables work automatically for most developer tools:
 
 | Environment Variable | Tools Supported |
 |---------------------|-----------------|
-| `SSL_CERT_FILE` | Python (pip, requests), Ruby (gem), Go, curl, wget |
+| `SSL_CERT_FILE` | Python (pip, requests), Ruby (gem), curl, wget |
 | `REQUESTS_CA_BUNDLE` | Python requests library |
 | `NODE_EXTRA_CA_CERTS` | Node.js, npm, yarn, pnpm |
 | `CURL_CA_BUNDLE` | curl, tools using libcurl |
@@ -1057,7 +1057,7 @@ verifi status --json
 ## Key Design Decisions
 
 ### Why No Tool Detection?
-- Environment variables work automatically for npm, pip, git, Ruby, curl, AWS CLI, Go
+- Environment variables work automatically for npm, pip, git, Ruby, curl, AWS CLI
 - No need to detect tools or configure them individually
 - Simpler codebase, same user value
 - Can add later if users request it

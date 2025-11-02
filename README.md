@@ -103,8 +103,8 @@ verifi works automatically with tools that respect standard SSL environment vari
 - **Version Control**: git
 - **HTTP Clients**: curl, wget, HTTPie
 - **Cloud CLIs**: AWS CLI, gcloud (when using Python)
-- **Programming Languages**: Python (requests), Node.js, Go, Ruby
-- **Infrastructure Tools**: terraform, ansible (when using Python), docker (registry operations)
+- **Programming Languages**: Python (requests), Node.js, Ruby
+- **Infrastructure Tools**: ansible (when using Python)
 
 No per-tool configuration required - these tools automatically recognize the environment variables verifi sets.
 
