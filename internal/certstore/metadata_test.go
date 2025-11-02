@@ -99,7 +99,7 @@ supYMePypXOo09WncTRCvSo8tzbHS0fs8Ya873Gf0x8o+qNeoTtMGkfgztDdYkT5
 BQ==
 -----END CERTIFICATE-----`
 
-	count := countCertificates([]byte(mixedPEM))
+	count := fetcher.CountCertificates([]byte(mixedPEM))
 
 	// Should count only the 2 CERTIFICATE blocks, not the RSA PRIVATE KEY
 	// Note: These are invalid certs, so may be 0 if parsing fails
@@ -116,7 +116,7 @@ func TestCountCertificates_InvalidCerts(t *testing.T) {
 This is not a valid certificate
 -----END CERTIFICATE-----`
 
-	count := countCertificates([]byte(invalidPEM))
+	count := fetcher.CountCertificates([]byte(invalidPEM))
 
 	// Should not count invalid certificates
 	if count != 0 {

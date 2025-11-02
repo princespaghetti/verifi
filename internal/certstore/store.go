@@ -2,8 +2,6 @@ package certstore
 
 import (
 	"context"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"os/user"
 	"path/filepath"
@@ -71,7 +69,7 @@ func (s *Store) Init(ctx context.Context, force bool) error {
 	}
 
 	// Count certificates in Mozilla bundle
-	certCount := countCertificates(embeddedBundle)
+	certCount := fetcher.CountCertificates(embeddedBundle)
 
 	// Create initial metadata
 	metadata := NewMetadata()
@@ -196,7 +194,7 @@ func (s *Store) rebuildBundle(ctx context.Context, metadata *Metadata) error {
 	metadata.CombinedBundle = BundleInfo{
 		Generated: time.Now(),
 		SHA256:    fetcher.ComputeSHA256(combined),
-		CertCount: countCertificates(combined),
+		CertCount: fetcher.CountCertificates(combined),
 		Sources:   sources,
 	}
 
@@ -503,7 +501,7 @@ func (s *Store) ResetMozillaBundle(ctx context.Context) error {
 
 	// Update metadata with locking
 	updateErr := s.UpdateMetadata(ctx, func(md *Metadata) error {
-		certCount := countCertificates(embeddedBundle)
+		certCount := fetcher.CountCertificates(embeddedBundle)
 		md.MozillaBundle = BundleInfo{
 			Generated: time.Now(),
 			SHA256:    fetcher.ComputeSHA256(embeddedBundle),
@@ -528,29 +526,4 @@ func (s *Store) ResetMozillaBundle(ctx context.Context) error {
 // It should be called within an UpdateMetadata callback to ensure proper locking.
 func (s *Store) RebuildBundle(ctx context.Context, metadata *Metadata) error {
 	return s.rebuildBundle(ctx, metadata)
-}
-
-// countCertificates counts the number of certificates in a PEM bundle.
-func countCertificates(pemData []byte) int {
-	count := 0
-	remaining := pemData
-
-	for {
-		block, rest := pem.Decode(remaining)
-		if block == nil {
-			break
-		}
-
-		// Only count CERTIFICATE blocks
-		if block.Type == "CERTIFICATE" {
-			// Try to parse to verify it's a valid certificate
-			if _, err := x509.ParseCertificate(block.Bytes); err == nil {
-				count++
-			}
-		}
-
-		remaining = rest
-	}
-
-	return count
 }

@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/princespaghetti/verifi/internal/fetcher"
 )
 
 func TestStore_AddCert_Integration(t *testing.T) {
@@ -70,7 +72,7 @@ func TestStore_AddCert_Integration(t *testing.T) {
 	}
 
 	// Count certificates in bundle (should be Mozilla certs + 1 user cert)
-	certCount := countCertificates(bundleData)
+	certCount := fetcher.CountCertificates(bundleData)
 	if certCount < 2 { // At least Mozilla bundle + our cert
 		t.Errorf("Bundle contains %d certificates, expected at least 2", certCount)
 	}

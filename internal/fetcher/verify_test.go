@@ -300,7 +300,7 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			count := countCertificates([]byte(tt.pemData))
+			count := CountCertificates([]byte(tt.pemData))
 			assert.Equal(t, tt.expected, count)
 		})
 	}

@@ -38,29 +38,24 @@ func Color(text, color string) string {
 	return color + text + colorReset
 }
 
-// colorize applies color to text, with a fallback if colors are disabled
-func colorize(text, color string) string {
-	return Color(text, color)
-}
-
 // Success prints a success message with a green checkmark
 func Success(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
-	icon := colorize("✓", colorGreen)
+	icon := Color("✓", colorGreen)
 	fmt.Printf("%s %s\n", icon, msg)
 }
 
 // Error prints an error message with a red X to stderr
 func Error(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
-	icon := colorize("✗", colorRed)
+	icon := Color("✗", colorRed)
 	fmt.Fprintf(os.Stderr, "%s Error: %s\n", icon, msg)
 }
 
 // Warning prints a warning message with a yellow warning sign
 func Warning(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
-	icon := colorize("⚠", colorYellow)
+	icon := Color("⚠", colorYellow)
 	fmt.Printf("%s Warning: %s\n", icon, msg)
 }
 
@@ -72,28 +67,28 @@ func Info(format string, args ...interface{}) {
 
 // Header prints a section header with optional underline
 func Header(text string) {
-	fmt.Println(colorize(text, colorBold))
+	fmt.Println(Color(text, colorBold))
 	fmt.Println(strings.Repeat("=", len(text)))
 	fmt.Println()
 }
 
 // Subheader prints a subsection header
 func Subheader(text string) {
-	fmt.Println(colorize(text, colorBold))
+	fmt.Println(Color(text, colorBold))
 	fmt.Println(strings.Repeat("-", len(text)))
 }
 
 // Section prints a simple section divider
 func Section(text string) {
 	fmt.Println()
-	fmt.Println(colorize(text, colorBold))
+	fmt.Println(Color(text, colorBold))
 	fmt.Println(strings.Repeat("-", len(text)))
 }
 
 // Field prints a labeled field (key-value pair)
 func Field(label, value string) {
 	labelFormatted := fmt.Sprintf("%-16s", label+":")
-	fmt.Printf("%s %s\n", colorize(labelFormatted, colorGray), value)
+	fmt.Printf("%s %s\n", Color(labelFormatted, colorGray), value)
 }
 
 // FieldIndented prints an indented labeled field
@@ -153,7 +148,7 @@ func (t *Table) Print() {
 	// Print headers
 	headerVals := make([]interface{}, len(t.Headers))
 	for i, h := range t.Headers {
-		headerVals[i] = colorize(h, colorBold)
+		headerVals[i] = Color(h, colorBold)
 	}
 	_, _ = fmt.Fprintf(t.writer, formatStr+"\n", headerVals...) // Ignore write errors - main operation succeeded
 
@@ -207,11 +202,6 @@ func FormatBytes(bytes int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
 
-// RepeatString repeats a string n times
-func RepeatString(s string, n int) string {
-	return strings.Repeat(s, n)
-}
-
 // TruncateString truncates a string to maxLen with ellipsis
 func TruncateString(s string, maxLen int) string {
 	if len(s) <= maxLen {
@@ -227,11 +217,11 @@ func TruncateString(s string, maxLen int) string {
 func StatusIcon(status string) string {
 	switch strings.ToLower(status) {
 	case "pass", "ok", "valid", "success":
-		return colorize("✓", colorGreen)
+		return Color("✓", colorGreen)
 	case "warn", "warning":
-		return colorize("⚠", colorYellow)
+		return Color("⚠", colorYellow)
 	case "fail", "error", "expired", "invalid":
-		return colorize("✗", colorRed)
+		return Color("✗", colorRed)
 	default:
 		return "•"
 	}
@@ -269,14 +259,4 @@ func ConfirmPrompt(message string) bool {
 	_, _ = fmt.Scanln(&response) // Ignore error, treat as no confirmation if failed
 	response = strings.ToLower(strings.TrimSpace(response))
 	return response == "y" || response == "yes"
-}
-
-// EnableColors enables color output
-func EnableColors() {
-	colorsEnabled = true
-}
-
-// DisableColors disables color output
-func DisableColors() {
-	colorsEnabled = false
 }

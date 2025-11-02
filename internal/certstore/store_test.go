@@ -10,6 +10,7 @@ import (
 	"time"
 
 	verifierrors "github.com/princespaghetti/verifi/internal/errors"
+	"github.com/princespaghetti/verifi/internal/fetcher"
 )
 
 func TestNewStore_DefaultPath(t *testing.T) {
@@ -393,7 +394,7 @@ func TestCountCertificates(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := countCertificates([]byte(tt.pem))
+			got := fetcher.CountCertificates([]byte(tt.pem))
 			if got != tt.want {
 				t.Errorf("countCertificates() = %d, want %d", got, tt.want)
 			}
@@ -434,7 +435,7 @@ func TestStore_RebuildBundle_WithUserCerts(t *testing.T) {
 	}
 
 	// Count certificates - should be Mozilla certs + 1
-	certCount := countCertificates(bundleData)
+	certCount := fetcher.CountCertificates(bundleData)
 	if certCount < 2 {
 		t.Errorf("Bundle should contain at least 2 certificates (Mozilla + test), got %d", certCount)
 	}

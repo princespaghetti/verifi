@@ -37,7 +37,7 @@ func VerifyBundle(bundleData []byte, currentCertCount int) (*BundleVerificationR
 	result := &BundleVerificationResult{}
 
 	// Count certificates in bundle
-	certCount := countCertificates(bundleData)
+	certCount := CountCertificates(bundleData)
 	result.CertCount = certCount
 
 	// Check minimum cert count
@@ -65,8 +65,8 @@ func VerifyBundle(bundleData []byte, currentCertCount int) (*BundleVerificationR
 	return result, nil
 }
 
-// countCertificates counts the number of valid certificates in a PEM bundle.
-func countCertificates(pemData []byte) int {
+// CountCertificates counts the number of valid certificates in a PEM bundle.
+func CountCertificates(pemData []byte) int {
 	count := 0
 	remaining := pemData
 
