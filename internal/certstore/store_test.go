@@ -247,9 +247,9 @@ func TestRebuildBundle_ContextCancellation(t *testing.T) {
 
 	// Try to rebuild with cancelled context
 	metadata := NewMetadata()
-	err = store.rebuildBundle(cancelledCtx, metadata)
+	err = store.RebuildBundle(cancelledCtx, metadata)
 	if err == nil {
-		t.Error("rebuildBundle() should fail with cancelled context")
+		t.Error("RebuildBundle() should fail with cancelled context")
 	}
 }
 

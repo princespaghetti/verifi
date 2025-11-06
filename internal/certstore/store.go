@@ -81,7 +81,7 @@ func (s *Store) Init(ctx context.Context, force bool) error {
 	}
 
 	// Create combined bundle (initially just the Mozilla bundle)
-	if err := s.rebuildBundle(ctx, metadata); err != nil {
+	if err := s.RebuildBundle(ctx, metadata); err != nil {
 		return err
 	}
 
@@ -130,8 +130,9 @@ func (s *Store) createDirectories() error {
 	return nil
 }
 
-// rebuildBundle rebuilds the combined certificate bundle from Mozilla bundle and user certs.
-func (s *Store) rebuildBundle(ctx context.Context, metadata *Metadata) error {
+// RebuildBundle rebuilds the combined certificate bundle from Mozilla bundle and user certs.
+// It should be called within an UpdateMetadata callback to ensure proper locking.
+func (s *Store) RebuildBundle(ctx context.Context, metadata *Metadata) error {
 	bundlePath := s.CombinedBundlePath()
 	tempPath := bundlePath + ".tmp"
 
@@ -321,7 +322,7 @@ func (s *Store) AddCert(ctx context.Context, certPath, name string, force bool) 
 	// Rebuild the combined bundle with the new certificate
 	// We need to do this outside the UpdateMetadata function to avoid nesting locks
 	rebuildErr := s.UpdateMetadata(ctx, func(md *Metadata) error {
-		return s.rebuildBundle(ctx, md)
+		return s.RebuildBundle(ctx, md)
 	})
 
 	if rebuildErr != nil {
@@ -445,7 +446,7 @@ func (s *Store) RemoveCert(ctx context.Context, name string) error {
 
 	// Rebuild the combined bundle
 	rebuildErr := s.UpdateMetadata(ctx, func(md *Metadata) error {
-		return s.rebuildBundle(ctx, md)
+		return s.RebuildBundle(ctx, md)
 	})
 
 	if rebuildErr != nil {
@@ -511,7 +512,7 @@ func (s *Store) ResetMozillaBundle(ctx context.Context) error {
 		}
 
 		// Rebuild combined bundle with reset Mozilla bundle
-		return s.rebuildBundle(ctx, md)
+		return s.RebuildBundle(ctx, md)
 	})
 
 	if updateErr != nil {
@@ -519,11 +520,4 @@ func (s *Store) ResetMozillaBundle(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// RebuildBundle rebuilds the combined certificate bundle.
-// This is a public wrapper around rebuildBundle for use by bundle update operations.
-// It should be called within an UpdateMetadata callback to ensure proper locking.
-func (s *Store) RebuildBundle(ctx context.Context, metadata *Metadata) error {
-	return s.rebuildBundle(ctx, metadata)
 }
