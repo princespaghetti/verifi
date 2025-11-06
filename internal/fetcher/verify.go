@@ -137,7 +137,11 @@ func ValidatePEMFormat(data []byte) error {
 	}
 
 	// Check if it starts with a PEM header
-	if !bytes.Contains(data[:min(len(data), 100)], []byte("-----BEGIN")) {
+	limit := 100
+	if len(data) < limit {
+		limit = len(data)
+	}
+	if !bytes.Contains(data[:limit], []byte("-----BEGIN")) {
 		return fmt.Errorf("data does not appear to be in PEM format")
 	}
 
@@ -148,14 +152,6 @@ func ValidatePEMFormat(data []byte) error {
 	}
 
 	return nil
-}
-
-// min returns the minimum of two integers.
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // ComputeSHA256 computes the SHA256 hash of data and returns it as a hex string.
